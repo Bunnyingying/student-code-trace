@@ -1,0 +1,9 @@
+# macOS
+.DS_Store
+
+# Node / VS Code 构建产物
+node_modules/
+out/
+
+# 临时文件
+*.tmp

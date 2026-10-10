@@ -1,0 +1,4758 @@
+<!doctype html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>学生编程数据-可视化面板</title>
+  <style>
+    :root {
+      --bg: #f4f6f8;
+      --panel: #ffffff;
+      --text: #17202a;
+      --muted: #667085;
+      --border: #d9e1ea;
+      --accent: #2563eb;
+      --accent-soft: #eaf1ff;
+      --green: #16a34a;
+      --green-soft: #e8f7ee;
+      --amber: #d97706;
+      --amber-soft: #fff5e6;
+      --red: #dc2626;
+      --red-soft: #feeceb;
+      --shadow: 0 1px 2px rgba(16, 24, 40, 0.05), 0 4px 14px rgba(16, 24, 40, 0.06);
+      --radius: 8px;
+      --mono: "Cascadia Code", Consolas, "Courier New", monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+      color: var(--text);
+      background: var(--bg);
+      font-family: "Segoe UI", "Microsoft YaHei", -apple-system, BlinkMacSystemFont, sans-serif;
+      letter-spacing: 0;
+    }
+
+    body {
+      padding: 20px;
+    }
+
+    button,
+    input,
+    select {
+      font: inherit;
+      letter-spacing: 0;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    .app {
+      width: min(1520px, 100%);
+      margin: 0 auto;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 16px;
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 28px;
+      line-height: 1.2;
+      font-weight: 700;
+    }
+
+    .brand p {
+      margin: 5px 0 0;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.5;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      padding: 0 16px;
+      font-size: 14px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      background: var(--panel);
+      font-weight: 600;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    .btn:hover {
+      border-color: #a9b8ca;
+      background: #f8fafc;
+    }
+
+    .btn.primary {
+      color: #ffffff;
+      border-color: var(--accent);
+      background: var(--accent);
+    }
+
+    .btn.primary:hover {
+      background: #1d4ed8;
+    }
+
+    .btn.danger {
+      color: var(--red);
+    }
+
+    .btn:disabled {
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+
+    .btn[id^="export"][id$="Btn"] {
+      color: #ffffff;
+      border-color: rgb(29, 78, 216);
+      background: rgb(29, 78, 216);
+    }
+
+    .btn[id^="export"][id$="Btn"]:hover {
+      border-color: #1e3a8a;
+      background: #1e3a8a;
+    }
+
+    .btn svg {
+      width: 17px;
+      height: 17px;
+      margin-right: 7px;
+    }
+
+    .import-panel {
+      margin-bottom: 16px;
+      padding: 18px;
+      border: 1px dashed #b9c6d4;
+      border-radius: var(--radius);
+      background: #fbfcfe;
+    }
+
+    .import-panel.dragover {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+    }
+
+    .import-panel strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 17px;
+    }
+
+    .import-panel p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    .import-result {
+      margin-top: 10px;
+      color: var(--text);
+      font-size: 15px;
+    }
+
+    .import-result.error {
+      color: var(--red);
+    }
+
+    .text-toggle {
+      padding: 0;
+      border: 0;
+      color: var(--accent);
+      background: transparent;
+      font-size: inherit;
+      font-weight: 650;
+    }
+
+    .text-toggle:hover {
+      text-decoration: underline;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 300px minmax(0, 1fr);
+      gap: 16px;
+      align-items: start;
+    }
+
+    .sidebar,
+    .main {
+      min-width: 0;
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 16px;
+      max-height: calc(100vh - 32px);
+      overflow: auto;
+      padding: 14px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--panel);
+      box-shadow: var(--shadow);
+    }
+
+    .panel-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .panel-title h2 {
+      margin: 0;
+      font-size: 18px;
+    }
+
+    .muted {
+      color: var(--muted);
+    }
+
+    .student-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .student-item {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 8px;
+      padding: 10px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: #ffffff;
+    }
+
+    .student-item.selected {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+    }
+
+    .student-item input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      accent-color: var(--accent);
+    }
+
+    .student-name {
+      min-width: 0;
+      overflow: hidden;
+      font-size: 16px;
+      font-weight: 650;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .student-meta {
+      margin-top: 3px;
+      overflow: hidden;
+      color: var(--muted);
+      font-size: 13px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .rename-btn {
+      border: 0;
+      color: var(--muted);
+      background: transparent;
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .rename-btn:hover {
+      color: var(--accent);
+    }
+
+    .student-actions {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 2px;
+    }
+
+    .action-btn {
+      border: 0;
+      padding: 3px 4px;
+      color: var(--muted);
+      background: transparent;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .action-btn:hover {
+      color: var(--accent);
+    }
+
+    .action-btn.danger:hover {
+      color: var(--red);
+    }
+
+    .sortable {
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .sortable:hover {
+      color: var(--accent);
+    }
+
+    .course-summary {
+      margin: 0 0 10px;
+      padding: 11px 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      background: #f8fafc;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .empty {
+      padding: 24px 14px;
+      color: var(--muted);
+      text-align: center;
+      font-size: 15px;
+      line-height: 1.7;
+    }
+
+    .main {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 6px;
+      padding: 5px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: #eef2f6;
+    }
+
+    .sub-tabs {
+      display: flex;
+      gap: 6px;
+      padding: 4px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: #f8fafc;
+    }
+
+    .sub-tab {
+      min-height: 38px;
+      padding: 0 15px;
+      border: 0;
+      border-radius: 5px;
+      color: var(--muted);
+      background: transparent;
+      font-size: 15px;
+      font-weight: 650;
+    }
+
+    .sub-tab.active {
+      color: var(--text);
+      background: #ffffff;
+      box-shadow: 0 1px 3px rgba(16, 24, 40, 0.09);
+    }
+
+    .tab {
+      flex: 1;
+      min-height: 44px;
+      border: 0;
+      border-radius: 5px;
+      color: var(--muted);
+      background: transparent;
+      font-size: 17px;
+      font-weight: 650;
+    }
+
+    .tab.active {
+      color: var(--text);
+      background: #ffffff;
+      box-shadow: 0 1px 3px rgba(16, 24, 40, 0.09);
+    }
+
+    .tab.active[data-tab="ai"] {
+      color: var(--accent);
+      border: 1px solid #a8c5ff;
+      box-shadow:
+        0 0 0 2px rgba(37, 99, 235, 0.12),
+        0 0 14px rgba(37, 99, 235, 0.18);
+    }
+
+    .filters {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--panel);
+    }
+
+    .filter-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--muted);
+      font-size: 14px;
+      white-space: nowrap;
+    }
+
+    select,
+    input[type="search"],
+    input[type="date"] {
+      min-height: 40px;
+      padding: 0 10px;
+      font-size: 14px;
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      color: var(--text);
+      background: #ffffff;
+    }
+
+    input[type="search"] {
+      min-width: 170px;
+    }
+
+    .filter-spacer {
+      flex: 1;
+    }
+
+    .checkbox-line {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--text);
+      font-size: 14px;
+      white-space: nowrap;
+    }
+
+    .checkbox-line input {
+      width: 15px;
+      height: 15px;
+      accent-color: var(--accent);
+    }
+
+    .panel {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 13px 15px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .panel-header h2 {
+      margin: 0;
+      font-size: 20px;
+    }
+
+    .panel-actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    .panel-body {
+      padding: 15px;
+      overflow-x: auto;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(140px, 1fr));
+      gap: 12px;
+    }
+
+    .stat-card {
+      min-height: 108px;
+      padding: 16px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: #ffffff;
+    }
+
+    .stat-label {
+      margin-bottom: 10px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .stat-value {
+      font-size: 30px;
+      line-height: 1;
+      font-weight: 750;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .stat-value.accent {
+      color: var(--accent);
+    }
+
+    .stat-value.green {
+      color: var(--green);
+    }
+
+    .stat-value.red {
+      color: var(--red);
+    }
+
+    .charts-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .chart-card {
+      min-width: 0;
+      padding: 14px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: #ffffff;
+      position: relative;
+    }
+
+    .chart-card.clickable {
+      cursor: pointer;
+    }
+
+    .chart-card.clickable:hover {
+      border-color: var(--accent);
+    }
+
+    .chart-card h3 {
+      margin: 0 0 8px;
+      font-size: 16px;
+    }
+
+    .chart-hint {
+      position: absolute;
+      top: 10px;
+      right: 12px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .chart-box {
+      min-height: 260px;
+    }
+
+    .svg-chart {
+      display: block;
+      width: 100%;
+      height: 260px;
+    }
+
+    .time-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 6px;
+      margin-bottom: 6px;
+    }
+
+    .time-zoom-btn {
+      min-height: 36px;
+      padding: 0 12px;
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      color: var(--text);
+      background: #ffffff;
+      font-size: 13px;
+      font-weight: 650;
+    }
+
+    .time-zoom-btn:hover {
+      border-color: var(--accent);
+    }
+
+    .time-detail {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid var(--border);
+    }
+
+    .table-wrap {
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      white-space: nowrap;
+    }
+
+    th,
+    td {
+      padding: 12px 13px;
+      font-size: 14px;
+      border-bottom: 1px solid #edf1f5;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      color: #475467;
+      background: #f8fafc;
+      font-weight: 650;
+    }
+
+    tbody tr:hover {
+      background: #f8fafc;
+    }
+
+    .numeric {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .path-cell,
+    .preview-cell {
+      white-space: normal;
+      word-break: break-all;
+    }
+
+    .operation-list {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 4px;
+    }
+
+    .event-time span {
+      display: block;
+    }
+
+    .event-time span:last-child {
+      margin-top: 2px;
+      color: var(--muted);
+      font-family: var(--mono);
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .badge.insert {
+      color: #166534;
+      background: var(--green-soft);
+    }
+
+    .badge.delete {
+      color: #991b1b;
+      background: var(--red-soft);
+    }
+
+    .badge.replace {
+      color: #92400e;
+      background: var(--amber-soft);
+    }
+
+    .badge.file {
+      color: #1e40af;
+      background: var(--accent-soft);
+    }
+
+    .course-group {
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+
+    .course-group+.course-group {
+      margin-top: 8px;
+    }
+
+    .course-group-header {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 9px 10px;
+      border: 0;
+      color: var(--text);
+      background: #f8fafc;
+      font-weight: 650;
+      text-align: left;
+    }
+
+    .course-group-header:hover {
+      background: var(--accent-soft);
+    }
+
+    .course-group-header span:last-child {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .course-group-body {
+      padding: 8px;
+    }
+
+    .pagination {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+      padding: 10px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .timeline {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .timeline-item {
+      padding: 10px 11px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: #ffffff;
+    }
+
+    .timeline-head {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+
+    .timeline-time {
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 13px;
+    }
+
+    .timeline-file {
+      margin-bottom: 6px;
+      overflow-wrap: anywhere;
+      font-weight: 650;
+    }
+
+    .preview {
+      margin-top: 7px;
+      padding: 8px;
+      border-left: 3px solid #cbd5e1;
+      color: #475467;
+      background: #f8fafc;
+      font-family: var(--mono);
+      font-size: 13px;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    .preview-btn {
+      display: inline-block;
+      max-width: 100%;
+      padding: 0;
+      border: 0;
+      color: #1d4ed8;
+      background: transparent;
+      text-align: left;
+      cursor: pointer;
+      word-break: break-all;
+      white-space: pre-wrap;
+    }
+
+    .preview-btn:hover {
+      text-decoration: underline;
+    }
+
+    .dialog-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 20;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background: rgba(15, 23, 42, 0.38);
+    }
+
+    .dialog-backdrop.open {
+      display: flex;
+    }
+
+    .dialog {
+      width: min(420px, 100%);
+      padding: 18px;
+      border-radius: var(--radius);
+      background: #ffffff;
+      box-shadow: 0 20px 55px rgba(16, 24, 40, 0.24);
+    }
+
+    .dialog.wide {
+      width: min(1040px, 100%);
+      max-height: min(86vh, 860px);
+      overflow: auto;
+    }
+
+    .dialog h2 {
+      margin: 0 0 12px;
+      font-size: 19px;
+    }
+
+    .dialog p {
+      margin: 0 0 8px;
+      color: var(--muted);
+      font-size: 15px;
+    }
+
+    .dialog input {
+      width: 100%;
+      min-height: 44px;
+      padding: 0 12px;
+      font-size: 14px;
+      border: 1px solid var(--border);
+      border-radius: 5px;
+    }
+
+    .course-history {
+      margin-top: 14px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+    }
+
+    .course-history-label {
+      margin-bottom: 8px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .course-history-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .course-history-btn {
+      min-height: 36px;
+      padding: 0 11px;
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      color: var(--text);
+      background: #f8fafc;
+      font-size: 13px;
+    }
+
+    .course-history-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: var(--accent-soft);
+    }
+
+    .dialog-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    .dialog-actions h2 {
+      margin: 0;
+      font-size: 19px;
+      margin-right: auto;
+    }
+
+    .chart-dialog-content {
+      min-height: 360px;
+    }
+
+    .chart-dialog-content .chart-large {
+      min-height: 380px;
+    }
+
+    .chart-dialog-content .svg-chart {
+      display: block;
+      width: 100%;
+      height: 380px;
+    }
+
+    .preview-dialog-content {
+      white-space: pre-wrap;
+      word-break: break-all;
+      max-height: 58vh;
+      overflow: auto;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: #334155;
+      background: #f8fafc;
+      font-family: var(--mono);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .ai-stats-grid {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(120px, 1fr));
+      gap: 12px;
+    }
+
+    .ai-hero {
+      margin-bottom: 16px;
+      padding: 16px 18px;
+      border: 1px solid #a8c5ff;
+      border-radius: var(--radius);
+      background: #ffffff;
+      box-shadow:
+        0 0 0 3px rgba(37, 99, 235, 0.10),
+        0 0 24px rgba(37, 99, 235, 0.16);
+    }
+
+    .ai-hero h2 {
+      margin: 0;
+      color: var(--accent);
+      font-size: 26px;
+      line-height: 1.25;
+    }
+
+    .ai-hero p {
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .ai-dialog-content {
+      max-height: 62vh;
+      overflow: auto;
+      padding: 14px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: #f8fafc;
+    }
+
+    .ai-session-summary {
+      margin-bottom: 14px;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: #ffffff;
+    }
+
+    .ai-session-summary h3 {
+      margin: 0 0 8px;
+      font-size: 17px;
+      line-height: 1.45;
+    }
+
+    .ai-session-summary p {
+      margin: 0 0 6px;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .ai-prompt {
+      margin: 12px 0;
+      padding: 10px;
+      border-left: 3px solid var(--accent);
+      background: #ffffff;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    .ai-message {
+      margin: 8px 0;
+      padding: 10px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: #ffffff;
+    }
+
+    .ai-role-badge {
+      display: inline-block;
+      margin-bottom: 6px;
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .ai-role-badge.user {
+      color: #1e40af;
+      background: var(--accent-soft);
+    }
+
+    .ai-role-badge.assistant {
+      color: #166534;
+      background: var(--green-soft);
+    }
+
+    .ai-role-badge.tool {
+      color: #92400e;
+      background: var(--amber-soft);
+    }
+
+    .ai-message-text {
+      white-space: pre-wrap;
+      word-break: break-all;
+      line-height: 1.55;
+    }
+
+    .ai-tool-name {
+      font-family: var(--mono);
+      font-weight: 700;
+      word-break: break-all;
+    }
+
+    .ai-tool-block {
+      margin-top: 6px;
+      overflow-wrap: anywhere;
+      color: #475467;
+      font-family: var(--mono);
+      font-size: 13px;
+      white-space: pre-wrap;
+    }
+
+    .ai-view-btn {
+      padding: 5px 10px;
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      color: var(--accent);
+      background: #ffffff;
+      font-size: 13px;
+      font-weight: 650;
+    }
+
+    .ai-view-btn:hover {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+    }
+
+    .ai-student-drawer,
+    .ai-session-drawer {
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: #ffffff;
+    }
+
+    .ai-student-drawer {
+      margin-bottom: 10px;
+    }
+
+    .ai-student-drawer > summary,
+    .ai-session-drawer > summary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 11px 12px;
+      cursor: pointer;
+      list-style: none;
+    }
+
+    .ai-student-drawer > summary {
+      font-weight: 700;
+      background: #f8fafc;
+    }
+
+    .ai-session-drawer > summary {
+      min-height: 44px;
+      color: var(--text);
+    }
+
+    .ai-student-drawer > summary::-webkit-details-marker,
+    .ai-session-drawer > summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .ai-student-drawer > summary:hover,
+    .ai-session-drawer > summary:hover,
+    .ai-student-drawer[open] > summary,
+    .ai-session-drawer[open] > summary {
+      background: var(--accent-soft);
+    }
+
+    .ai-student-drawer-meta,
+    .ai-session-drawer-meta {
+      flex: 0 0 auto;
+      color: var(--muted);
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .ai-drawer-label {
+      display: flex;
+      min-width: 0;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .ai-drawer-arrow {
+      display: inline-block;
+      flex: 0 0 auto;
+      color: var(--muted);
+      font-size: 18px;
+      line-height: 1;
+      transform: rotate(0deg);
+      transition: transform 0.15s ease;
+    }
+
+    details[open] > summary .ai-drawer-arrow {
+      transform: rotate(90deg);
+    }
+
+    .ai-student-drawer-body {
+      padding: 10px 10px 2px;
+      border-top: 1px solid var(--border);
+    }
+
+    .ai-session-drawer {
+      margin-bottom: 8px;
+    }
+
+    .ai-session-drawer-body {
+      padding: 4px 10px 10px;
+      border-top: 1px solid var(--border);
+      background: #ffffff;
+    }
+
+    .ai-session-meta {
+      padding: 10px 0 4px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .ai-session-cell {
+      min-width: 300px;
+    }
+
+    .ai-session-title {
+      max-width: 380px;
+      overflow: hidden;
+      font-weight: 650;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .ai-session-title[data-ai-id] {
+      cursor: pointer;
+    }
+
+    .ai-session-title[data-ai-id]:hover {
+      color: var(--accent);
+    }
+
+    .ai-question-line {
+      max-width: 100%;
+      margin-top: 8px;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: #ffffff;
+      overflow: hidden;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .ai-question-line[data-ai-id] {
+      cursor: pointer;
+    }
+
+    .ai-question-line[data-ai-id]:hover {
+      color: var(--accent);
+      border-color: var(--accent);
+      background: var(--accent-soft);
+    }
+
+    .ai-question-more,
+    .ai-question-empty {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .ai-number {
+      display: inline-block;
+      max-width: 100%;
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .ai-question-target.ai-question-highlight {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14);
+    }
+
+    .ai-chart-dialog-content {
+      min-height: 360px;
+    }
+
+    .ai-chart-zoom-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .ai-chart-scroll {
+      overflow: auto;
+      max-height: 62vh;
+      padding: 10px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: #ffffff;
+    }
+
+    .ai-chart-stage {
+      position: relative;
+    }
+
+    .ai-chart-scalable {
+      width: 720px;
+      height: 260px;
+      transform-origin: 0 0;
+    }
+
+    .ai-chart-scalable .svg-chart {
+      width: 720px;
+      height: 260px;
+    }
+
+    .ai-chart-zoom-btn {
+      min-height: 36px;
+      padding: 0 12px;
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      color: var(--text);
+      background: #ffffff;
+      font-size: 13px;
+      font-weight: 650;
+    }
+
+    .ai-chart-zoom-btn:hover {
+      border-color: var(--accent);
+    }
+
+    .note {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .time-warning {
+      margin-bottom: 16px;
+      padding: 10px 12px;
+      border: 1px solid #f4c76a;
+      border-radius: var(--radius);
+      color: #92400e;
+      background: var(--amber-soft);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    @media (max-width: 1100px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        position: static;
+        max-height: none;
+      }
+
+      .stats-grid {
+        grid-template-columns: repeat(3, minmax(130px, 1fr));
+      }
+
+      .ai-stats-grid {
+        grid-template-columns: repeat(3, minmax(130px, 1fr));
+      }
+    }
+
+    @media (max-width: 720px) {
+      body {
+        padding: 12px;
+      }
+
+      .topbar {
+        flex-direction: column;
+      }
+
+      .actions {
+        justify-content: flex-start;
+      }
+
+      .charts-grid,
+      .stats-grid,
+      .ai-stats-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .filters {
+        align-items: stretch;
+      }
+
+      .filter-spacer {
+        display: none;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <h1>学生编程数据-可视化面板</h1>
+        <p>离线分析学生 <code>edit-trace.log</code> 与 <code>ai-session-trace.log</code>，无需后端、登录或数据库。</p>
+      </div>
+      <div class="actions">
+        <button class="btn primary" id="exportReportBtn" disabled title="选择导出 HTML 或 PDF 报告">
+          <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 3v12"></path>
+            <path d="m7 10 5 5 5-5"></path>
+            <path d="M4 19h16"></path>
+          </svg>
+          导出报告
+        </button>
+        <button class="btn danger" id="clearBtn" title="清空当前导入的全部日志和统计">清空数据</button>
+      </div>
+    </header>
+
+    <section class="import-panel" id="importPanel">
+      <input id="fileInput" type="file" accept=".log,.jsonl,.txt" multiple hidden>
+      <input id="folderInput" type="file" webkitdirectory directory multiple hidden>
+      <strong>导入学生 edit-trace.log / ai-session-trace.log 日志</strong>
+      <p><strong>整班导入：</strong>点击“选择文件夹（整班导入）”，选中某一次课的文件夹（例如 <code>0923 711班实验</code>），或直接选中上一级 <code>过程性数据</code> 文件夹，页面会自动递归找出全部 <code>edit-trace.log</code> / <code>ai-session-trace.log</code>，自动跳过作业网页等其他文件，并且按学生文件夹自动分人、按班级文件夹自动命名课程。</p>
+      <p>也支持把<strong>整个文件夹拖进来</strong>，或继续拖拽一个或多个 <code>edit-trace.log</code>、<code>ai-session-trace.log</code>、<code>ai-session-trace.jsonl</code>。导入前会要求确认本节课课程名称，也可以选择不写。</p>
+      <p>
+        <button class="btn primary" id="pickFolderBtn" style="margin-top: 10px;">选择文件夹（整班导入）</button>
+        <button class="btn" id="pickFilesBtn" style="margin-top: 10px;">选择日志文件</button>
+      </p>
+      <div class="import-result" id="importResult"></div>
+    </section>
+
+    <div class="layout">
+      <aside class="sidebar">
+        <div class="panel-title">
+          <h2>学生列表</h2>
+          <label class="checkbox-line">
+            <input type="checkbox" id="selectAll" checked>
+            <span>全选</span>
+          </label>
+        </div>
+        <div class="course-summary" id="courseSummary">尚未导入课程。</div>
+        <div class="note" id="selectionHint">当前显示全部学生。</div>
+        <div class="student-list" id="studentList"></div>
+      </aside>
+
+      <main class="main">
+        <nav class="tabs">
+          <button class="tab active" data-tab="analysis">可视化分析</button>
+          <button class="tab" data-tab="ai">AI 问答</button>
+          <button class="tab" data-tab="operations">操作明细</button>
+        </nav>
+
+        <section class="filters">
+          <label class="filter-label">课程
+            <select id="courseFilter">
+              <option value="">全部</option>
+            </select>
+          </label>
+          <label class="filter-label">文件类型
+            <select id="fileTypeFilter">
+              <option value="">全部</option>
+            </select>
+          </label>
+          <label class="filter-label">操作类型
+            <select id="operationFilter">
+              <option value="">全部</option>
+            </select>
+          </label>
+          <label class="filter-label">起始日期
+            <input id="dateFromFilter" type="date">
+          </label>
+          <label class="filter-label">结束日期
+            <input id="dateToFilter" type="date">
+          </label>
+          <label class="filter-label">搜索
+            <input id="searchInput" type="search" placeholder="学生、文件、代码或 AI 内容">
+          </label>
+          <div class="filter-spacer"></div>
+          <span class="note" id="filterCount"></span>
+        </section>
+
+        <section id="view-overview"></section>
+        <section id="view-detail"></section>
+        <section id="view-compare"></section>
+        <nav class="sub-tabs" id="operationTabs" style="display:none;">
+          <button class="sub-tab active" data-operation-tab="files">文件操作明细</button>
+          <button class="sub-tab" data-operation-tab="events">事件操作明细</button>
+        </nav>
+        <section id="view-files"></section>
+        <section id="view-events"></section>
+        <section id="view-ai"></section>
+      </main>
+    </div>
+  </div>
+
+  <div class="dialog-backdrop" id="renameDialog">
+    <div class="dialog">
+      <h2>重命名学生</h2>
+      <p id="renamePrompt"></p>
+      <input id="renameInput" maxlength="80" autocomplete="off">
+      <div class="dialog-actions">
+        <button class="btn" id="cancelRenameBtn">取消</button>
+        <button class="btn primary" id="confirmRenameBtn">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="dialog-backdrop" id="editStudentDialog">
+    <div class="dialog">
+      <h2>编辑学生信息</h2>
+      <p id="editStudentName"></p>
+      <label class="note">学号</label>
+      <input id="editStudentId" maxlength="80" autocomplete="off">
+      <label class="note" style="margin-top: 10px;">班级</label>
+      <input id="editStudentClass" maxlength="80" autocomplete="off">
+      <label class="note" style="margin-top: 10px;">课程名称（多个用、分隔）</label>
+      <input id="editStudentCourse" maxlength="200" autocomplete="off">
+      <div class="dialog-actions">
+        <button class="btn" id="cancelEditStudentBtn">取消</button>
+        <button class="btn primary" id="confirmEditStudentBtn">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="dialog-backdrop" id="messageDialog">
+    <div class="dialog">
+      <h2 id="messageTitle"></h2>
+      <p id="messageText"></p>
+      <div class="dialog-actions">
+        <button class="btn primary" id="messageOkBtn">知道了</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="dialog-backdrop" id="courseDialog">
+    <div class="dialog">
+      <h2>填写课程名称</h2>
+      <p>填写后本次导入将统一标记为同一课程；留空时会按班级文件夹自动命名，识别不到再使用“未命名课程”。</p>
+      <input id="courseDialogInput" maxlength="80" autocomplete="off" placeholder="例如：第1次课 2026.9.1">
+      <p id="courseDialogHint" style="margin: 8px 0 0; color: #475467; font-size: 13px;"></p>
+      <div class="course-history" id="courseHistory" style="display:none;">
+        <div class="course-history-label">最近使用</div>
+        <div class="course-history-list" id="courseHistoryList"></div>
+      </div>
+      <div class="dialog-actions">
+        <button class="btn" id="courseSkipBtn">不写，直接导入</button>
+        <button class="btn primary" id="courseConfirmBtn">确定导入</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="dialog-backdrop" id="chartDialog">
+    <div class="dialog wide">
+      <div class="dialog-actions">
+        <h2 id="chartDialogTitle">图表详情</h2>
+        <button class="btn" id="popoutChartBtn">独立窗口打开</button>
+        <button class="btn primary" id="closeChartBtn">关闭</button>
+      </div>
+      <div class="chart-dialog-content" id="chartDialogContent"></div>
+    </div>
+  </div>
+
+  <div class="dialog-backdrop" id="exportDialog">
+    <div class="dialog">
+      <h2>选择报告格式</h2>
+      <p>选择导出的报告文件格式。PDF 导出会调用浏览器打印，可在打印窗口中选择“另存为 PDF”。</p>
+      <div class="dialog-actions">
+        <button class="btn" id="exportHtmlBtn">导出 HTML</button>
+        <button class="btn primary" id="exportPdfBtn">导出 PDF</button>
+        <button class="btn" id="cancelExportBtn">取消</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="dialog-backdrop" id="previewDialog">
+    <div class="dialog wide">
+      <div class="dialog-actions">
+        <h2>事件预览</h2>
+        <button class="btn primary" id="closePreviewBtn">关闭</button>
+      </div>
+      <p class="note" id="previewDialogMeta"></p>
+      <div class="preview-dialog-content" id="previewDialogContent"></div>
+    </div>
+  </div>
+
+  <div class="dialog-backdrop" id="aiSessionDialog">
+    <div class="dialog wide">
+      <div class="dialog-actions">
+        <h2>AI 会话原文</h2>
+        <button class="btn primary" id="closeAiSessionBtn">关闭</button>
+      </div>
+      <p class="note" id="aiSessionDialogMeta"></p>
+      <div class="ai-dialog-content" id="aiSessionDialogContent"></div>
+    </div>
+  </div>
+
+  <div class="dialog-backdrop" id="aiChartDialog">
+    <div class="dialog wide">
+      <div class="dialog-actions">
+        <h2 id="aiChartDialogTitle">AI 图表详情</h2>
+        <button class="btn primary" id="closeAiChartBtn">关闭</button>
+      </div>
+      <div class="ai-chart-dialog-content" id="aiChartDialogContent"></div>
+    </div>
+  </div>
+
+  <script>
+    "use strict";
+
+    const SUSPICIOUS_THRESHOLD = 300;
+    const PAGE_SIZE = 100;
+    const FILE_PAGE_SIZE = 50;
+    const COLORS = ["#2563eb", "#16a34a", "#d97706", "#dc2626", "#0f766e", "#7c3aed", "#0891b2", "#be123c", "#4d7c0f", "#4338ca"];
+    const AI_SYSTEM_BLOCK_TAGS = ["mode_notice", "file_content", "environment_details", "system_notice"];
+    const COURSE_HISTORY_KEY = "code-edit-trace.courseHistory.v1";
+    const FILE_TYPE_GROUPS = {
+      html: "HTML", htm: "HTML", css: "CSS", scss: "CSS", sass: "CSS", less: "CSS",
+      js: "JavaScript", jsx: "JavaScript", mjs: "JavaScript", cjs: "JavaScript",
+      ts: "TypeScript", tsx: "TypeScript", vue: "前端框架", svelte: "前端框架",
+      json: "数据文件", jsonl: "数据文件", xml: "数据文件", yaml: "配置文件", yml: "配置文件",
+      toml: "配置文件", ini: "配置文件", env: "配置文件", config: "配置文件",
+      md: "Markdown", markdown: "Markdown", txt: "文本文件", text: "文本文件", log: "日志文件",
+      csv: "数据文件", tsv: "数据文件", py: "Python", java: "Java",
+      c: "C/C++", h: "C/C++", cpp: "C/C++", hpp: "C/C++", cc: "C/C++",
+      php: "PHP", rb: "Ruby", go: "Go", rs: "Rust", swift: "Swift", kt: "Kotlin",
+      png: "图片", jpg: "图片", jpeg: "图片", gif: "图片", svg: "图片", webp: "图片", bmp: "图片", ico: "图片",
+      pdf: "文档", doc: "文档", docx: "文档", ppt: "文档", pptx: "文档",
+      xls: "表格", xlsx: "表格", ods: "表格", xlsm: "表格",
+      zip: "压缩包", rar: "压缩包", "7z": "压缩包", tar: "压缩包", gz: "压缩包",
+      mp3: "音频", wav: "音频", ogg: "音频", flac: "音频",
+      mp4: "视频", mov: "视频", avi: "视频", mkv: "视频", webm: "视频",
+      sql: "数据库", db: "数据库", sqlite: "数据库",
+      exe: "可执行文件", msi: "可执行文件", sh: "脚本文件", bat: "脚本文件", cmd: "脚本文件", ps1: "脚本文件"
+    };
+    const OPERATION_LABELS = {
+      insert: "插入",
+      delete: "删除",
+      replace: "替换",
+      "file.create": "文件新建",
+      "file.delete": "文件删除",
+      "file.rename": "文件重命名",
+      "file.move": "文件移动"
+    };
+    const TIME_ZOOM_MINUTES = [1, 5, 15, 30, 60, 120];
+
+    const state = {
+      files: [],
+      entries: [],
+      aiFiles: [],
+      aiSessions: [],
+      aiImportStats: {
+        filteredSystemMessages: 0,
+        mergedSnapshots: 0,
+        pluginArtifactRecords: 0
+      },
+      importResultExpanded: false,
+      students: [],
+      selectedKeys: new Set(),
+      selectionMode: "all",
+      eventPage: 0,
+      eventSortKey: "timestamp",
+      eventSortDir: "desc",
+      filePage: 0,
+      fileSortKey: "editCount",
+      fileSortDir: "desc",
+      activeTab: "analysis",
+      operationView: "files",
+      renameKey: null,
+      editStudentKey: null,
+      unnamedCount: 0,
+      nextEntryId: 0,
+      nextAiSessionId: 0,
+      pendingFiles: [],
+      courseHistory: [],
+      timeZoomIndex: 2,
+      timeBins: [],
+      currentChartKey: null,
+      aiChartType: null,
+      aiChartZoom: 1,
+      openAiSessionId: null,
+      openCourses: new Set()
+    };
+
+    const $ = (id) => document.getElementById(id);
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#39;");
+    }
+
+    function safeEmbed(value) {
+      return JSON.stringify(value).replaceAll("</", "<\\/");
+    }
+
+    function parseTimestamp(value) {
+      if (value == null || value === "") return null;
+      const date = new Date(value);
+      return Number.isNaN(date.getTime()) ? null : date;
+    }
+
+    function formatDate(date) {
+      if (!date) return "--";
+      const pad = (num) => String(num).padStart(2, "0");
+      return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+    }
+
+    function formatDateTimeCell(date) {
+      const [datePart, timePart = ""] = formatDate(date).split(" ");
+      return `<td class="event-time"><span>${escapeHtml(datePart)}</span><span>${escapeHtml(timePart)}</span></td>`;
+    }
+
+    function formatTimeLabel(date) {
+      const pad = (num) => String(num).padStart(2, "0");
+      return `${pad(date.getHours())}:${pad(date.getMinutes())}`;
+    }
+
+    function basename(file) {
+      const normalized = String(file || "").replaceAll("\\", "/");
+      const parts = normalized.split("/");
+      return parts[parts.length - 1] || normalized;
+    }
+
+    function extensionOf(file) {
+      const name = basename(file);
+      if (!name) return "";
+      const dot = name.lastIndexOf(".");
+      if (dot <= 0) return "";
+      return name.slice(dot + 1).toLowerCase();
+    }
+
+    function fileTypeOf(file, kind) {
+      if (kind === "directory") return "目录";
+      const extension = extensionOf(file);
+      return extension ? (FILE_TYPE_GROUPS[extension] || "其他文件") : "无扩展名";
+    }
+
+    function fileNameToStudent(fileName) {
+      const name = basename(fileName);
+      const match = name.match(/^(.*?)(?:[-_](?:edit-trace|ai-session-trace|ai-session))\.(?:log|jsonl|txt)$/i);
+      return match ? match[1].trim() : "";
+    }
+
+    const TRACE_FILE_PATTERN = /(?:edit-trace|ai-session-trace|ai-session)\.(?:log|jsonl|txt)$/i;
+
+    function isTraceFile(fileName) {
+      const name = basename(fileName);
+      if (!name || /\.tmp$/i.test(name)) return false;
+      return TRACE_FILE_PATTERN.test(name);
+    }
+
+    function relativePathOf(file) {
+      return String(file?.webkitRelativePath || "").trim();
+    }
+
+    function parseStudentFolderName(segment) {
+      const cleaned = String(segment || "").replace(/^\[/, "").replace(/\]$/, "").trim();
+      const match = cleaned.match(/^(.+?)[_\-]([0-9]{4,})(?:[_\-].*)?$/);
+      if (!match) return null;
+      const name = match[1].trim();
+      return name ? { name, studentId: match[2] } : null;
+    }
+
+    // 从类似 0923 711班实验/学生作业[11时3分54秒]/[王桦君_2250701_PC01]/01/edit-trace.log
+    // 的路径里倒着找“学生文件夹”，作为日志内部没有学生信息时的兜底。
+    function studentFromRelativePath(relativePath) {
+      const segments = String(relativePath || "").replaceAll("\\", "/").split("/").filter(Boolean);
+      segments.pop();
+      for (let index = segments.length - 1; index >= 0; index -= 1) {
+        const student = parseStudentFolderName(segments[index]);
+        if (student) return student;
+      }
+      return null;
+    }
+
+    // 从路径里识别“班级 / 课程文件夹”，例如 0923 711班实验、0923 10班实验。
+    function courseHintFromRelativePath(relativePath) {
+      const segments = String(relativePath || "").replaceAll("\\", "/").split("/").filter(Boolean);
+      segments.pop();
+      const hint = segments.find((segment) => /(实验|班|课)/.test(segment) && !segment.startsWith("["));
+      return hint ? hint.trim() : "";
+    }
+
+    // 插件里学生自己填的信息偶尔会填成“1”“周彦彤2250720”“郑梓珊2251118高二11班”这类，
+    // 这里做一次保守清洗；清洗失败时用作业文件夹名 [姓名_学号_PCxx] 兜底。
+    function resolveStudentIdentity(embedded, pathStudent) {
+      const className = String(embedded?.className || "").trim();
+      const embeddedId = String(embedded?.studentId || "").trim();
+      let name = String(embedded?.name || "").trim();
+      for (const noise of [embeddedId, className]) {
+        if (noise && noise.length > 1) name = name.split(noise).join("");
+      }
+      name = name.replace(/[\s_\-—·]+$/g, "").trim();
+      const folderName = String(pathStudent?.name || "").trim();
+      if (!name || name.length <= 1 || /^[0-9]+$/.test(name)) name = folderName || name;
+      const studentId = /^[0-9]{4,}$/.test(embeddedId)
+        ? embeddedId
+        : (String(pathStudent?.studentId || "").trim() || embeddedId);
+      return { name, studentId, className };
+    }
+
+    function operationLabel(operation) {
+      return OPERATION_LABELS[operation] || operation || "未知操作";
+    }
+
+    function getEmbeddedStudent(raw) {
+      const student = raw?.student;
+      if (!student) return null;
+      if (typeof student === "string") return { name: student, className: "", studentId: "" };
+      if (typeof student === "object") {
+        return {
+          name: String(student.name || student.studentName || "").trim(),
+          className: String(student.className || student.class || "").trim(),
+          studentId: String(student.studentId || student.id || student.number || "").trim()
+        };
+      }
+      return null;
+    }
+
+    function isAiSessionRaw(raw) {
+      if (!raw || typeof raw !== "object") return false;
+      return raw.eventType === "ai.session" ||
+        (raw.sessionId && Array.isArray(raw.messages)) ||
+        (raw.sessionId && Array.isArray(raw.events));
+    }
+
+    function isPluginArtifactPath(filePath) {
+      const name = basename(filePath).toLowerCase();
+      return name === "edit-trace.log" ||
+        name === "ai-session-trace.log" ||
+        name === "ai-session-trace.log.tmp";
+    }
+
+    function isPluginArtifactEntry(raw) {
+      return isPluginArtifactPath(raw?.file || raw?.uri || raw?.path || "") ||
+        isPluginArtifactPath(raw?.oldFile || raw?.oldPath || "");
+    }
+
+    function cleanAiUserText(text) {
+      const source = String(text || "");
+      const matches = Array.from(source.matchAll(/<user_input(?:\s[^>]*)?>([\s\S]*?)<\/user_input>/gi));
+      let cleaned = matches.length ? matches.map((match) => match[1] || "").join("\n") : source;
+      for (const tag of AI_SYSTEM_BLOCK_TAGS) {
+        cleaned = cleaned.replace(new RegExp(`<${tag}\\b[^>]*>[\\s\\S]*?<\\/${tag}>`, "gi"), " ");
+      }
+      return cleaned.replace(/\s+/g, " ").trim();
+    }
+
+    function summarizeAiValue(value, limit) {
+      let text = "";
+      if (typeof value === "string") {
+        text = value;
+      } else if (value !== null && typeof value === "object") {
+        try {
+          text = JSON.stringify(value) || "";
+        } catch {
+          text = String(value);
+        }
+      } else {
+        text = String(value ?? "");
+      }
+      return text.slice(0, limit);
+    }
+
+    function normalizeAiMessages(raw) {
+      const source = Array.isArray(raw.messages) ? raw.messages : Array.isArray(raw.events) ? raw.events : [];
+      const messages = [];
+      const toolUseById = new Map();
+      let questions = 0;
+      let replies = 0;
+      let toolCalls = 0;
+      let systemMessages = 0;
+
+      for (const item of source) {
+        if (!item || typeof item !== "object") continue;
+        const role = String(item.role || "");
+        if (item.type === "text") {
+          const rawText = String(item.text || "");
+          const text = role === "user" ? cleanAiUserText(rawText) : rawText.trim();
+          if (!text) {
+            if (role === "user" && rawText.trim()) systemMessages += 1;
+            continue;
+          }
+          if (role === "user") {
+            if (rawText !== text) systemMessages += 1;
+            questions += 1;
+          }
+          if (role === "assistant") replies += 1;
+          messages.push({ role, type: "text", text });
+        } else if (item.type === "tool_use") {
+          const tool = String(item.tool || item.name || "unknown");
+          const event = {
+            role: role || "assistant",
+            type: "tool_use",
+            tool,
+            inputSummary: summarizeAiValue(item.input ?? item.inputSummary, 500)
+          };
+          if (item.id) toolUseById.set(String(item.id), event);
+          messages.push(event);
+          toolCalls += 1;
+        } else if (item.type === "tool_result") {
+          const tool = String(item.tool || item.name || "tool_result");
+          const preview = summarizeAiValue(item.content ?? item.summary, 200);
+          const isError = Boolean(item.is_error);
+          const linked = item.tool_use_id ? toolUseById.get(String(item.tool_use_id)) : undefined;
+          if (linked) {
+            linked.resultPreview = preview;
+            linked.isError = isError;
+          } else {
+            messages.push({ role: role || "user", type: "tool_result", tool, resultPreview: preview, isError });
+          }
+        }
+      }
+
+      return { messages, questions, replies, toolCalls, systemMessages };
+    }
+
+    function firstAiQuestionTimestamp(raw) {
+      const source = Array.isArray(raw.messages) ? raw.messages : Array.isArray(raw.events) ? raw.events : [];
+      for (const item of source) {
+        if (!item || typeof item !== "object") continue;
+        if (item.role === "user" && item.type === "text" && cleanAiUserText(item.text)) {
+          const parsed = parseTimestamp(item.timestamp || item.ts);
+          if (parsed) return parsed;
+        }
+      }
+      return null;
+    }
+
+    function normalizeAiSession(raw, studentKey, courseName) {
+      const normalized = normalizeAiMessages(raw);
+      const tokens = raw.tokens && typeof raw.tokens === "object" ? raw.tokens : {};
+      const firstQuestionAt = parseTimestamp(raw.firstQuestionAt) ||
+        firstAiQuestionTimestamp(raw) ||
+        parseTimestamp(raw.startedAt || raw.started_at || raw.timestamp);
+      return {
+        id: state.nextAiSessionId++,
+        student: studentKey,
+        course: courseName || "未命名课程",
+        timestamp: firstQuestionAt || parseTimestamp(raw.timestamp || raw.updatedAt || raw.startedAt),
+        updatedAt: parseTimestamp(raw.updatedAt || raw.timestamp || raw.startedAt),
+        startedAt: parseTimestamp(raw.startedAt || raw.started_at) || firstQuestionAt,
+        firstQuestionAt,
+        localTimestamp: String(raw.localTimestamp || ""),
+        timeTrusted: raw.timeTrusted === true,
+        timeSource: String(raw.timeSource || "legacy-local"),
+        timeConfidence: String(raw.timeConfidence || (raw.timeTrusted === true ? "synced" : "untrusted")),
+        clockOffsetMs: Number(raw.clockOffsetMs || 0),
+        clockSyncedAt: String(raw.clockSyncedAt || ""),
+        sessionId: String(raw.sessionId || ""),
+        title: String(raw.title || ""),
+        prompt: String(raw.prompt || ""),
+        provider: String(raw.provider || ""),
+        model: String(raw.model || ""),
+        workspaceRoot: String(raw.workspaceRoot || raw.workspace_root || ""),
+        messages: normalized.messages,
+        questions: normalized.questions,
+        replies: normalized.replies,
+        toolCalls: normalized.toolCalls,
+        filteredSystemMessages: Number(raw.filteredSystemMessageCount || normalized.systemMessages),
+        tokens: {
+          input: Number(tokens.input || 0),
+          output: Number(tokens.output || 0),
+          cacheRead: Number(tokens.cacheRead || 0),
+          cacheWrite: Number(tokens.cacheWrite || 0),
+          totalCost: Number(tokens.totalCost || 0)
+        }
+      };
+    }
+
+    function normalizeOperation(change) {
+      if (["insert", "delete", "replace"].includes(change.operation)) return change.operation;
+      const text = String(change.text || "");
+      const removedText = String(change.removedText || change.removed || "");
+      const rangeLength = Number(change.rangeLength ?? change.range?.length ?? 0);
+      if (text && rangeLength === 0) return "insert";
+      if (!text && rangeLength > 0) return "delete";
+      if (text && rangeLength > 0) return "replace";
+      if (removedText && !text) return "delete";
+      return "insert";
+    }
+
+    function changeText(change, operation) {
+      if (operation === "delete") return String(change.removedText || change.removed || change.text || "");
+      return String(change.text || "");
+    }
+
+    function normalizeChanges(rawChanges) {
+      if (!Array.isArray(rawChanges)) return [];
+      return rawChanges
+        .filter((item) => item && typeof item === "object")
+        .map((item) => {
+          const operation = normalizeOperation(item);
+          return {
+            operation,
+            text: changeText(item, operation),
+            removedText: String(item.removedText || item.removed || ""),
+            rangeLength: Number(item.rangeLength ?? item.range?.length ?? 0)
+          };
+        });
+    }
+
+    function normalizeEntry(raw, studentKey, studentMeta, courseName) {
+      const eventType = String(raw.eventType || "edit");
+      const kind = String(raw.kind || "");
+      const file = String(raw.file || raw.uri || raw.path || "<unknown>");
+      const changes = normalizeChanges(raw.changes);
+      const timestamp = parseTimestamp(raw.timestamp);
+      return {
+        id: state.nextEntryId++,
+        student: studentKey,
+        studentMeta,
+        course: courseName || "未命名课程",
+        timestamp,
+        file,
+        fileType: fileTypeOf(file, kind),
+        extension: extensionOf(file),
+        eventType,
+        kind,
+        changes,
+        insertedChars: Math.max(0, Number(raw.insertedChars || 0)),
+        deletedChars: Math.max(0, Number(raw.deletedChars || 0)),
+        timeTrusted: raw.timeTrusted === true,
+        timeSource: String(raw.timeSource || "legacy-local"),
+        timeConfidence: String(raw.timeConfidence || (raw.timeTrusted === true ? "synced" : "untrusted")),
+        clockOffsetMs: Number(raw.clockOffsetMs || 0),
+        clockSyncedAt: String(raw.clockSyncedAt || ""),
+        raw
+      };
+    }
+
+    function selectedStudentKeys() {
+      if (state.selectionMode === "all") return new Set(state.students.map((student) => student.key));
+      if (state.selectionMode === "none") return new Set();
+      return new Set(state.selectedKeys);
+    }
+
+    function studentFor(key) {
+      return state.students.find((student) => student.key === key);
+    }
+
+    function currentEvents() {
+      const selected = selectedStudentKeys();
+      const course = $("courseFilter").value;
+      const fileType = $("fileTypeFilter").value;
+      const operation = $("operationFilter").value;
+      const search = $("searchInput").value.trim().toLowerCase();
+      const fromRaw = $("dateFromFilter").value;
+      const toRaw = $("dateToFilter").value;
+      const from = fromRaw ? new Date(`${fromRaw}T00:00:00`) : null;
+      const to = toRaw ? new Date(`${toRaw}T23:59:59.999`) : null;
+      return state.entries.filter((entry) => {
+        if (!selected.has(entry.student)) return false;
+        if (course && entry.course !== course) return false;
+        if (fileType && entry.fileType !== fileType) return false;
+        if (entry.timestamp) {
+          if (from && entry.timestamp < from) return false;
+          if (to && entry.timestamp > to) return false;
+        } else if (from || to) {
+          return false;
+        }
+        if (search) {
+          const haystack = `${entry.student} ${entry.course} ${entry.file} ${entry.fileType} ${entry.extension} ${previewText(entry, 500)}`.toLowerCase();
+          if (!haystack.includes(search)) return false;
+        }
+        if (!operation) return true;
+        if (operation === "file") return entry.eventType.startsWith("file.");
+        if (operation.startsWith("file.")) return entry.eventType === operation;
+        return entry.changes.some((change) => change.operation === operation);
+      });
+    }
+
+    function aiSessionSearchText(session) {
+      const student = studentFor(session.student);
+      const messageText = session.messages.map((message) => {
+        if (message.type === "text") return message.text;
+        if (message.type === "tool_use") return `${message.tool} ${message.inputSummary} ${message.resultPreview || ""}`;
+        return `${message.tool} ${message.resultPreview}`;
+      }).join(" ");
+      return `${session.student} ${student?.name || ""} ${session.course} ${session.title} ${session.prompt} ${session.model} ${session.provider} ${messageText}`;
+    }
+
+    function currentAiSessions() {
+      const selected = selectedStudentKeys();
+      const course = $("courseFilter").value;
+      const search = $("searchInput").value.trim().toLowerCase();
+      const fromRaw = $("dateFromFilter").value;
+      const toRaw = $("dateToFilter").value;
+      const from = fromRaw ? new Date(`${fromRaw}T00:00:00`) : null;
+      const to = toRaw ? new Date(`${toRaw}T23:59:59.999`) : null;
+      return state.aiSessions
+        .filter((session) => {
+          if (!selected.has(session.student)) return false;
+          if (course && session.course !== course) return false;
+          if (session.timestamp) {
+            if (from && session.timestamp < from) return false;
+            if (to && session.timestamp > to) return false;
+          } else if (from || to) {
+            return false;
+          }
+          if (search && !aiSessionSearchText(session).toLowerCase().includes(search)) return false;
+          return true;
+        })
+        .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+    }
+
+    function uniqueFiles(events) {
+      const files = new Map();
+      for (const entry of events) {
+        const key = `${entry.student}\u0000${entry.file}`;
+        if (!files.has(key)) {
+          files.set(key, {
+            student: entry.student,
+            course: entry.course,
+            file: entry.file,
+            fileType: entry.fileType,
+            extension: entry.extension,
+            editCount: 0,
+            fileOpCount: 0,
+            insertedChars: 0,
+            deletedChars: 0,
+            lastTime: null
+          });
+        }
+        const item = files.get(key);
+        if (entry.eventType === "edit") {
+          item.editCount += 1;
+          item.insertedChars += entry.insertedChars;
+          item.deletedChars += entry.deletedChars;
+        } else if (entry.eventType.startsWith("file.")) {
+          item.fileOpCount += 1;
+        }
+        if (!item.lastTime || (entry.timestamp && entry.timestamp > item.lastTime)) item.lastTime = entry.timestamp;
+      }
+      return Array.from(files.values()).sort((a, b) => b.editCount - a.editCount || a.file.localeCompare(b.file, "zh-CN"));
+    }
+
+    function statTotals(events) {
+      const fileSet = new Set();
+      let editEvents = 0;
+      let fileOps = 0;
+      let inserted = 0;
+      let deleted = 0;
+      for (const entry of events) {
+        fileSet.add(`${entry.student}\u0000${entry.file}`);
+        if (entry.eventType === "edit") {
+          editEvents += 1;
+          inserted += entry.insertedChars;
+          deleted += entry.deletedChars;
+        } else if (entry.eventType.startsWith("file.")) {
+          fileOps += 1;
+        }
+      }
+      return { students: new Set(events.map((entry) => entry.student)).size, editEvents, fileOps, files: fileSet.size, insertedChars: inserted, deletedChars: deleted };
+    }
+
+    function studentSummaries(events) {
+      const map = new Map();
+      for (const student of state.students) {
+        map.set(student.key, {
+          key: student.key,
+          name: student.name,
+          className: student.className,
+          studentId: student.studentId,
+          courses: new Set(),
+          editEvents: 0,
+          fileOps: 0,
+          files: new Set(),
+          insertedChars: 0,
+          deletedChars: 0,
+          firstTime: null,
+          lastTime: null
+        });
+      }
+      for (const entry of events) {
+        const summary = map.get(entry.student);
+        if (!summary) continue;
+        summary.courses.add(entry.course);
+        summary.files.add(entry.file);
+        if (entry.eventType === "edit") {
+          summary.editEvents += 1;
+          summary.insertedChars += entry.insertedChars;
+          summary.deletedChars += entry.deletedChars;
+        } else if (entry.eventType.startsWith("file.")) {
+          summary.fileOps += 1;
+        }
+        if (entry.timestamp) {
+          if (!summary.firstTime || entry.timestamp < summary.firstTime) summary.firstTime = entry.timestamp;
+          if (!summary.lastTime || entry.timestamp > summary.lastTime) summary.lastTime = entry.timestamp;
+        }
+      }
+      return Array.from(map.values())
+        .map((item) => ({ ...item, fileCount: item.files.size, courseNames: Array.from(item.courses).sort((a, b) => a.localeCompare(b, "zh-CN")).join("、") }))
+        .filter((item) => item.editEvents > 0 || item.fileOps > 0);
+    }
+
+    function uniqueFileTypes(events) {
+      const set = new Set();
+      for (const entry of events) set.add(entry.fileType);
+      return Array.from(set).sort((a, b) => a.localeCompare(b, "zh-CN"));
+    }
+
+    function uniqueCourses(events, aiSessions = []) {
+      const set = new Set();
+      for (const entry of events) set.add(entry.course || "未命名课程");
+      for (const session of aiSessions) set.add(session.course || "未命名课程");
+      return Array.from(set).sort((a, b) => a.localeCompare(b, "zh-CN"));
+    }
+
+    function uniqueOperations(events) {
+      const set = new Set();
+      for (const entry of events) {
+        if (entry.eventType === "edit") {
+          for (const change of entry.changes) set.add(change.operation);
+        } else if (entry.eventType.startsWith("file.")) {
+          set.add(entry.eventType);
+        }
+      }
+      return Array.from(set).sort((a, b) => {
+        const order = { insert: 0, delete: 1, replace: 2, "file.create": 3, "file.delete": 4, "file.rename": 5, "file.move": 6 };
+        return (order[a] ?? 99) - (order[b] ?? 99) || a.localeCompare(b);
+      });
+    }
+
+    function chartBar(items, options = {}) {
+      const values = items.map((item) => Number(item.value || 0));
+      const max = Math.max(1, ...values);
+      const width = 720;
+      const height = 220;
+      const top = 12;
+      const bottom = 46;
+      const left = 46;
+      const right = 12;
+      const plotWidth = width - left - right;
+      const plotHeight = height - top - bottom;
+      const barGap = items.length > 1 ? Math.min(18, plotWidth / items.length * 0.28) : 8;
+      const slot = items.length ? plotWidth / items.length : plotWidth;
+      const barWidth = Math.max(2, Math.min(52, slot - barGap));
+      const labelEvery = Math.max(1, Math.ceil(items.length / 14));
+      let bars = "";
+      items.forEach((item, index) => {
+        const x = left + slot * index + (slot - barWidth) / 2;
+        const barHeight = values[index] === 0 ? 0 : Math.max(2, values[index] / max * plotHeight);
+        const y = top + plotHeight - barHeight;
+        const color = item.color || options.color || COLORS[index % COLORS.length];
+        bars += `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barWidth.toFixed(1)}" height="${barHeight.toFixed(1)}" rx="2" fill="${color}"></rect>`;
+        if (index % labelEvery === 0) {
+          bars += `<text x="${(x + barWidth / 2).toFixed(1)}" y="${(height - 24).toFixed(1)}" font-size="14" fill="#667085" text-anchor="middle" transform="rotate(-28 ${(x + barWidth / 2).toFixed(1)} ${(height - 24).toFixed(1)})">${escapeHtml(shortenLabel(item.label, 9))}</text>`;
+        }
+        bars += `<text x="${(x + barWidth / 2).toFixed(1)}" y="${(y - 6).toFixed(1)}" font-size="14" fill="#475467" text-anchor="middle">${values[index]}</text>`;
+      });
+      return `<svg class="svg-chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="${escapeHtml(options.title || "柱状图")}">
+        <line x1="${left}" y1="${top + plotHeight}" x2="${width - right}" y2="${top + plotHeight}" stroke="#d9e1ea" stroke-width="1"></line>
+        <line x1="${left}" y1="${top}" x2="${left}" y2="${top + plotHeight}" stroke="#d9e1ea" stroke-width="1"></line>
+        <text x="${left - 8}" y="${top + 5}" text-anchor="end" font-size="13" fill="#667085">${max}</text>
+        <text x="${left - 8}" y="${top + plotHeight / 2 + 4}" text-anchor="end" font-size="13" fill="#667085">${Math.round(max / 2)}</text>
+        <text x="${left - 8}" y="${top + plotHeight + 5}" text-anchor="end" font-size="13" fill="#667085">0</text>
+        ${bars}
+      </svg>`;
+    }
+
+    function aiTokenGroupedChart(items, options = {}) {
+      if (!items.length) return `<svg class="svg-chart" viewBox="0 0 720 220" role="img" aria-label="学生 Token 输入 / 输出对比"><text x="360" y="110" text-anchor="middle" font-size="16" fill="#667085">暂无数据</text></svg>`;
+      const width = 720;
+      const height = 220;
+      const top = 28;
+      const bottom = 48;
+      const left = 56;
+      const right = 16;
+      const plotWidth = width - left - right;
+      const plotHeight = height - top - bottom;
+      const max = Math.max(1, ...items.flatMap((item) => [Number(item.input || 0), Number(item.output || 0)]));
+      const slot = plotWidth / items.length;
+      const groupWidth = Math.max(10, Math.min(74, slot * 0.62));
+      const barWidth = Math.max(2, (groupWidth - 6) / 2);
+      let bars = "";
+      let labels = "";
+      let legend = `<rect x="${width - 212}" y="8" width="10" height="10" rx="2" fill="#2563eb"></rect>
+        <text x="${width - 198}" y="17" font-size="13" fill="#475467">Token 输入</text>
+        <rect x="${width - 118}" y="8" width="10" height="10" rx="2" fill="#16a34a"></rect>
+        <text x="${width - 104}" y="17" font-size="13" fill="#475467">Token 输出</text>`;
+
+      items.forEach((item, index) => {
+        const center = left + slot * index + slot / 2;
+        const inputX = center - barWidth - 3;
+        const outputX = center + 3;
+        const inputHeight = Number(item.input || 0) / max * plotHeight;
+        const outputHeight = Number(item.output || 0) / max * plotHeight;
+        const inputY = top + plotHeight - inputHeight;
+        const outputY = top + plotHeight - outputHeight;
+        const inputText = Number(item.input || 0).toLocaleString("zh-CN");
+        const outputText = Number(item.output || 0).toLocaleString("zh-CN");
+        bars += `<rect x="${inputX.toFixed(1)}" y="${inputY.toFixed(1)}" width="${barWidth.toFixed(1)}" height="${inputHeight.toFixed(1)}" rx="2" fill="#2563eb">
+          <title>${escapeHtml(item.label)} Token 输入 ${inputText}</title>
+        </rect>
+        <rect x="${outputX.toFixed(1)}" y="${outputY.toFixed(1)}" width="${barWidth.toFixed(1)}" height="${outputHeight.toFixed(1)}" rx="2" fill="#16a34a">
+          <title>${escapeHtml(item.label)} Token 输出 ${outputText}</title>
+        </rect>`;
+        labels += `<text x="${center.toFixed(1)}" y="${(height - 24).toFixed(1)}" font-size="14" fill="#667085" text-anchor="middle" transform="rotate(-28 ${center.toFixed(1)} ${(height - 24).toFixed(1)})">${escapeHtml(shortenLabel(item.label, 9))}</text>`;
+      });
+
+      return `<svg class="svg-chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="${escapeHtml(options.title || "学生 Token 输入 / 输出对比")}">
+        ${legend}
+        <line x1="${left}" y1="${top + plotHeight}" x2="${width - right}" y2="${top + plotHeight}" stroke="#d9e1ea" stroke-width="1"></line>
+        <line x1="${left}" y1="${top}" x2="${left}" y2="${top + plotHeight}" stroke="#d9e1ea" stroke-width="1"></line>
+        <text x="${left - 8}" y="${top + 5}" text-anchor="end" font-size="13" fill="#667085">${max.toLocaleString("zh-CN")}</text>
+        <text x="${left - 8}" y="${top + plotHeight / 2 + 4}" text-anchor="end" font-size="13" fill="#667085">${Math.round(max / 2).toLocaleString("zh-CN")}</text>
+        <text x="${left - 8}" y="${top + plotHeight + 5}" text-anchor="end" font-size="13" fill="#667085">0</text>
+        ${bars}
+        ${labels}
+      </svg>`;
+    }
+
+    function chartHBar(items, options = {}) {
+      const values = items.map((item) => Number(item.value || 0));
+      const max = Math.max(1, ...values);
+      const width = 720;
+      const rowHeight = 38;
+      const top = 8;
+      const height = Math.max(160, top + rowHeight * Math.max(items.length, 1) + 16);
+      const labelWidth = 150;
+      const right = 40;
+      const barLeft = labelWidth + 12;
+      const plotWidth = Math.max(1, width - right - barLeft);
+      let rows = "";
+      items.forEach((item, index) => {
+        const y = top + index * rowHeight;
+        const rowW = Math.max(2, values[index] / max * plotWidth);
+        rows += `<text x="0" y="${y + 23}" font-size="15" fill="#17202a">${escapeHtml(shortenLabel(item.label, 17))}</text>`;
+        rows += `<rect x="${barLeft}" y="${y + 7}" width="${rowW.toFixed(1)}" height="24" rx="3" fill="${item.color || options.color || COLORS[index % COLORS.length]}"></rect>`;
+        rows += `<text x="${(barLeft + rowW + 8).toFixed(1)}" y="${y + 24}" font-size="15" fill="#475467">${values[index]}</text>`;
+      });
+      return `<svg class="svg-chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="${escapeHtml(options.title || "横向柱状图")}">
+        <line x1="${barLeft}" y1="${top + rowHeight * items.length}" x2="${width - right}" y2="${top + rowHeight * items.length}" stroke="#d9e1ea" stroke-width="1"></line>
+        ${rows}
+      </svg>`;
+    }
+
+    function chartDonut(items) {
+      const total = items.reduce((sum, item) => sum + Number(item.value || 0), 0);
+      const width = 460;
+      const height = 240;
+      const radius = 76;
+      const centerX = 110;
+      const centerY = 120;
+      const circumference = 2 * Math.PI * radius;
+      let offset = 0;
+      let arcs = "";
+      let legend = "";
+      if (total === 0) {
+        return `<svg class="svg-chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="操作类型分布">
+          <circle cx="${centerX}" cy="${centerY}" r="${radius}" fill="none" stroke="#e9edf2" stroke-width="28"></circle>
+          <text x="${centerX}" y="${centerY + 5}" text-anchor="middle" font-size="18" fill="#667085">暂无数据</text>
+        </svg>`;
+      }
+      items.forEach((item, index) => {
+        const value = Number(item.value || 0);
+        if (value <= 0) return;
+        const ratio = value / total;
+        const dash = `${(ratio * circumference).toFixed(2)} ${circumference.toFixed(2)}`;
+        const color = item.color || COLORS[index % COLORS.length];
+        const middleAngle = -Math.PI / 2 + (offset + ratio / 2) * Math.PI * 2;
+        const countX = centerX + Math.cos(middleAngle) * radius;
+        const countY = centerY + Math.sin(middleAngle) * radius + 4;
+        const legendY = 24 + index * 28;
+        arcs += `<circle cx="${centerX}" cy="${centerY}" r="${radius}" fill="none" stroke="${color}" stroke-width="28" stroke-dasharray="${dash}" stroke-dashoffset="${(-offset * circumference).toFixed(2)}" transform="rotate(-90 ${centerX} ${centerY})"><title>${escapeHtml(item.label)}：${value}</title></circle>`;
+        arcs += `<text x="${countX.toFixed(1)}" y="${countY.toFixed(1)}" text-anchor="middle" font-size="${ratio < 0.08 ? 10 : 12}" font-weight="700" fill="#ffffff" paint-order="stroke" stroke="rgba(15,23,42,0.35)" stroke-width="2">${value.toLocaleString("zh-CN")}</text>`;
+        legend += `<rect x="245" y="${legendY - 11}" width="11" height="11" rx="2" fill="${color}"></rect>
+          <text x="264" y="${legendY}" font-size="14" fill="#475467">${escapeHtml(shortenLabel(item.label, 12))}</text>`;
+        offset += ratio;
+      });
+      return `<svg class="svg-chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="操作类型分布">
+        ${arcs}
+        <text x="${centerX}" y="${centerY - 2}" text-anchor="middle" font-size="34" font-weight="700" fill="#17202a">${total}</text>
+        <text x="${centerX}" y="${centerY + 20}" text-anchor="middle" font-size="14" fill="#667085">次操作</text>
+        ${legend}
+      </svg>`;
+    }
+
+    function shortenLabel(label, maxLength) {
+      const text = String(label || "");
+      return text.length <= maxLength ? text : `${text.slice(0, maxLength - 1)}…`;
+    }
+
+    function operationDistribution(events) {
+      const counts = new Map();
+      for (const entry of events) {
+        if (entry.eventType === "edit") {
+          for (const change of entry.changes) counts.set(change.operation, (counts.get(change.operation) || 0) + 1);
+        } else if (entry.eventType.startsWith("file.")) {
+          counts.set(entry.eventType, (counts.get(entry.eventType) || 0) + 1);
+        }
+      }
+      return Array.from(counts.entries()).map(([operation, value], index) => ({ label: operationLabel(operation), value, color: COLORS[index % COLORS.length] })).filter((item) => item.value > 0).sort((a, b) => b.value - a.value);
+    }
+
+    function fileTypeDistribution(events) {
+      const map = new Map();
+      for (const entry of events) {
+        if (entry.eventType !== "edit") continue;
+        map.set(entry.fileType, (map.get(entry.fileType) || 0) + 1);
+      }
+      return Array.from(map.entries()).map(([label, value]) => ({ label: label || "无扩展名", value })).sort((a, b) => b.value - a.value).slice(0, 12);
+    }
+
+    function currentTimeBinMinutes() {
+      return TIME_ZOOM_MINUTES[state.timeZoomIndex] || 15;
+    }
+
+    function timeBinsFor(events, binMinutes) {
+      const dated = events.filter((entry) => entry.timestamp);
+      if (!dated.length) return [];
+      const step = binMinutes * 60 * 1000;
+      const minTime = Math.min(...dated.map((entry) => entry.timestamp.getTime()));
+      const maxTime = Math.max(...dated.map((entry) => entry.timestamp.getTime()));
+      const first = Math.floor(minTime / step) * step;
+      const count = Math.floor((maxTime - first) / step) + 1;
+      const bins = Array.from({ length: count }, (_, index) => ({
+        key: first + index * step,
+        start: new Date(first + index * step),
+        value: 0,
+        events: []
+      }));
+      for (const entry of dated) {
+        const index = Math.floor((entry.timestamp.getTime() - first) / step);
+        if (index < 0 || index >= bins.length) continue;
+        bins[index].value += 1;
+        bins[index].events.push(entry);
+      }
+      return bins.filter((bin) => bin.value > 0).map((bin) => ({ ...bin, label: formatTimeLabel(bin.start) }));
+    }
+
+    function timeChartSvg(bins) {
+      if (!bins.length) return emptyChart();
+      const values = bins.map((bin) => bin.value);
+      const max = Math.max(1, ...values);
+      const width = 900;
+      const height = 230;
+      const top = 14;
+      const bottom = 50;
+      const left = 50;
+      const right = 16;
+      const plotWidth = width - left - right;
+      const plotHeight = height - top - bottom;
+      const slot = plotWidth / bins.length;
+      const barWidth = Math.max(4, Math.min(54, slot * 0.72));
+      const labelEvery = Math.max(1, Math.ceil(bins.length / 12));
+      const bars = bins.map((bin, index) => {
+        const x = left + slot * index + (slot - barWidth) / 2;
+        const barHeight = Math.max(3, bin.value / max * plotHeight);
+        const y = top + plotHeight - barHeight;
+        return `<g class="time-bar" data-time-bin="${bin.key}" tabindex="0" role="button">
+          <rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barWidth.toFixed(1)}" height="${barHeight.toFixed(1)}" rx="2" fill="#2563eb"></rect>
+          <text x="${(x + barWidth / 2).toFixed(1)}" y="${(y - 7).toFixed(1)}" font-size="14" fill="#475467" text-anchor="middle">${bin.value}</text>
+          ${index % labelEvery === 0 ? `<text x="${(x + barWidth / 2).toFixed(1)}" y="${(height - 23).toFixed(1)}" font-size="13" fill="#667085" text-anchor="middle" transform="rotate(-32 ${(x + barWidth / 2).toFixed(1)} ${(height - 23).toFixed(1)})">${escapeHtml(bin.label)}</text>` : ""}
+        </g>`;
+      }).join("");
+      return `<svg class="svg-chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="修改时间分布">
+        <line x1="${left}" y1="${top + plotHeight}" x2="${width - right}" y2="${top + plotHeight}" stroke="#d9e1ea" stroke-width="1"></line>
+        <line x1="${left}" y1="${top}" x2="${left}" y2="${top + plotHeight}" stroke="#d9e1ea" stroke-width="1"></line>
+        <text x="${left - 8}" y="${top + 5}" text-anchor="end" font-size="13" fill="#667085">${max}</text>
+        <text x="${left - 8}" y="${top + plotHeight / 2 + 4}" text-anchor="end" font-size="13" fill="#667085">${Math.round(max / 2)}</text>
+        <text x="${left - 8}" y="${top + plotHeight + 5}" text-anchor="end" font-size="13" fill="#667085">0</text>
+        ${bars}
+      </svg>`;
+    }
+
+    function timeBinDetail(bin) {
+      if (!bin) return `<div class="empty">请点击一个时间柱查看明细。</div>`;
+      const end = new Date(bin.start.getTime() + currentTimeBinMinutes() * 60 * 1000);
+      const map = new Map();
+      for (const entry of bin.events) {
+        if (!map.has(entry.student)) map.set(entry.student, { student: entry.student, operations: new Map() });
+        const detail = map.get(entry.student);
+        if (entry.eventType === "edit") {
+          if (!entry.changes.length) {
+            detail.operations.set("无改动", (detail.operations.get("无改动") || 0) + 1);
+          } else {
+            for (const change of entry.changes) {
+              const label = operationLabel(change.operation);
+              detail.operations.set(label, (detail.operations.get(label) || 0) + 1);
+            }
+          }
+        } else {
+          const label = operationLabel(entry.eventType);
+          detail.operations.set(label, (detail.operations.get(label) || 0) + 1);
+        }
+      }
+      const rows = Array.from(map.values()).flatMap((item) => Array.from(item.operations.entries()).map(([operation, count]) => `
+        <tr><td>${escapeHtml(item.student)}</td><td>${escapeHtml(operation)}</td><td class="numeric">${count}</td></tr>`)).join("");
+      return `<div class="time-detail">
+        <strong>${formatDate(bin.start)} 至 ${formatDate(end)}：共 ${bin.value} 次操作</strong>
+        <div class="table-wrap"><table>
+          <thead><tr><th>学生</th><th>操作类型</th><th class="numeric">操作次数</th></tr></thead>
+          <tbody>${rows || `<tr><td colspan="3" class="empty">暂无明细</td></tr>`}</tbody>
+        </table></div>
+      </div>`;
+    }
+
+    function timeChartCard(events) {
+      const binMinutes = currentTimeBinMinutes();
+      const bins = timeBinsFor(events, binMinutes);
+      state.timeBins = bins;
+      const zoomOutDisabled = state.timeZoomIndex >= TIME_ZOOM_MINUTES.length - 1;
+      const zoomInDisabled = state.timeZoomIndex <= 0;
+      return `
+        <div class="time-toolbar">
+          <button class="time-zoom-btn" data-time-zoom="in" ${zoomInDisabled ? "disabled" : ""}>放大</button>
+          <button class="time-zoom-btn" data-time-zoom="out" ${zoomOutDisabled ? "disabled" : ""}>缩小</button>
+          <span class="note">当前粒度：${binMinutes} 分钟</span>
+        </div>
+        <div class="chart-box">${timeChartSvg(bins)}</div>
+        <div id="timeChartDetail">${timeBinDetail(null)}</div>
+      `;
+    }
+
+    function studentEditDistribution(events) {
+      const map = new Map();
+      for (const student of state.students) map.set(student.key, { label: student.name, value: 0 });
+      for (const entry of events) {
+        if (entry.eventType !== "edit") continue;
+        const item = map.get(entry.student);
+        if (item) item.value += 1;
+      }
+      return Array.from(map.values()).sort((a, b) => b.value - a.value);
+    }
+
+    function renderStudentList() {
+      const container = $("studentList");
+      const courses = uniqueCourses(state.entries, state.aiSessions);
+      $("courseSummary").textContent = courses.length ? `课程：${courses.join("、")}` : "尚未导入课程。";
+      if (!state.students.length) {
+        container.innerHTML = `<div class="empty">还没有导入日志。</div>`;
+        return;
+      }
+      $("selectAll").checked = state.selectionMode === "all" || state.selectedKeys.size === state.students.length;
+      $("selectionHint").textContent = state.selectionMode === "none"
+        ? "当前未选择任何学生。"
+        : state.selectionMode === "all"
+          ? "当前显示全部学生。"
+          : `已选择 ${state.selectedKeys.size} 名学生。`;
+      const courseMap = new Map();
+      for (const course of courses) courseMap.set(course, []);
+      for (const student of state.students) {
+        const studentCourses = Array.from(student.courses || []).filter((course) => courseMap.has(course));
+        const targets = studentCourses.length ? studentCourses : ["未命名课程"];
+        for (const course of targets) {
+          if (!courseMap.has(course)) courseMap.set(course, []);
+          courseMap.get(course).push(student);
+        }
+      }
+      const studentRow = (student) => {
+        const isChecked = state.selectionMode === "all" || state.selectedKeys.has(student.key);
+        const metaParts = [student.studentId, student.className].filter(Boolean);
+        return `<div class="student-item ${isChecked ? "selected" : ""}">
+          <input type="checkbox" data-key="${escapeHtml(student.key)}" ${isChecked ? "checked" : ""}>
+          <div>
+            <div class="student-name">${escapeHtml(student.name)}</div>
+            <div class="student-meta">${metaParts.length ? escapeHtml(metaParts.join(" / ")) : "未填写学号 / 班级"}</div>
+          </div>
+          <div class="student-actions">
+            <button class="action-btn" data-edit="${escapeHtml(student.key)}">编辑</button>
+            <button class="action-btn danger" data-delete="${escapeHtml(student.key)}">删除</button>
+          </div>
+        </div>`;
+      };
+      const groups = Array.from(courseMap.entries()).map(([course, members]) => {
+        const open = state.openCourses.size === 0 || state.openCourses.has(course);
+        return `<div class="course-group" data-course="${escapeHtml(course)}">
+          <button class="course-group-header" data-course-key="${escapeHtml(course)}"><span>${escapeHtml(course)}</span><span>${members.length} 人</span></button>
+          <div class="course-group-body" style="${open ? "" : "display:none"}">${members.map(studentRow).join("")}</div>
+        </div>`;
+      }).join("");
+      container.innerHTML = groups;
+      container.querySelectorAll(".course-group-header").forEach((button) => {
+        button.addEventListener("click", () => {
+          const course = button.dataset.courseKey;
+          if (state.openCourses.size === 0) {
+            for (const item of courseMap.keys()) state.openCourses.add(item);
+          }
+          if (state.openCourses.has(course)) state.openCourses.delete(course);
+          else state.openCourses.add(course);
+          renderStudentList();
+        });
+      });
+      container.querySelectorAll('input[type="checkbox"]').forEach((checkbox) => {
+        checkbox.addEventListener("change", () => toggleStudent(checkbox.dataset.key));
+      });
+      container.querySelectorAll("[data-edit]").forEach((button) => {
+        button.addEventListener("click", () => openEditStudentDialog(button.dataset.edit));
+      });
+      container.querySelectorAll("[data-delete]").forEach((button) => {
+        button.addEventListener("click", () => deleteStudent(button.dataset.delete));
+      });
+    }
+
+    function toggleStudent(key) {
+      const allKeys = state.students.map((student) => student.key);
+      if (state.selectionMode === "all") {
+        state.selectionMode = "some";
+        state.selectedKeys = new Set(allKeys.filter((item) => item !== key));
+      } else if (state.selectionMode === "none") {
+        state.selectionMode = "some";
+        state.selectedKeys = new Set([key]);
+      } else {
+        if (state.selectedKeys.has(key)) state.selectedKeys.delete(key);
+        else state.selectedKeys.add(key);
+        if (state.selectedKeys.size === 0) state.selectionMode = "none";
+        else if (state.selectedKeys.size === allKeys.length) {
+          state.selectionMode = "all";
+          state.selectedKeys.clear();
+        }
+      }
+      renderStudentList();
+      updateView();
+    }
+
+    function setAllStudents(checked) {
+      state.selectionMode = checked ? "all" : "none";
+      state.selectedKeys.clear();
+      renderStudentList();
+      updateView();
+    }
+
+    function openRenameDialog(key) {
+      const student = studentFor(key);
+      if (!student) return;
+      state.renameKey = key;
+      $("renamePrompt").textContent = `将“${student.name}”重命名为：`;
+      $("renameInput").value = student.name;
+      $("renameDialog").classList.add("open");
+      $("renameInput").focus();
+      $("renameInput").select();
+    }
+
+    function closeRenameDialog() {
+      state.renameKey = null;
+      $("renameDialog").classList.remove("open");
+    }
+
+    function confirmRename() {
+      const key = state.renameKey;
+      const newName = $("renameInput").value.trim();
+      if (!key || !newName) return;
+      const existing = state.students.find((student) => student.key !== key && student.name === newName);
+      let targetKey = existing ? existing.key : newName;
+      if (existing) {
+        state.students = state.students.filter((student) => student.key !== key);
+        state.selectedKeys.delete(key);
+        state.selectedKeys.add(existing.key);
+        if (state.selectionMode === "all" || state.selectionMode === "none") state.selectionMode = "all";
+        else if (state.selectedKeys.size === state.students.length) {
+          state.selectionMode = "all";
+          state.selectedKeys.clear();
+        }
+      } else {
+        const student = studentFor(key);
+        if (student) student.name = newName;
+        targetKey = newName;
+      }
+      for (const entry of state.entries) if (entry.student === key) entry.student = targetKey;
+      for (const file of state.files) if (file.student === key) file.student = targetKey;
+      for (const session of state.aiSessions) if (session.student === key) session.student = targetKey;
+      for (const file of state.aiFiles) if (file.student === key) file.student = targetKey;
+      for (const student of state.students) if (student.key === key) student.key = targetKey;
+      closeRenameDialog();
+      renderAll();
+    }
+
+    function deleteStudent(key) {
+      const student = studentFor(key);
+      if (!student) return;
+      state.students = state.students.filter((item) => item.key !== key);
+      state.entries = state.entries.filter((entry) => entry.student !== key);
+      state.files = state.files.filter((file) => file.student !== key);
+      state.aiSessions = state.aiSessions.filter((session) => session.student !== key);
+      state.aiFiles = state.aiFiles.filter((file) => file.student !== key);
+      state.selectedKeys.delete(key);
+      if (state.selectionMode === "some" && state.selectedKeys.size === 0) state.selectionMode = "none";
+      renderAll();
+    }
+
+    function openEditStudentDialog(key) {
+      const student = studentFor(key);
+      if (!student) return;
+      state.editStudentKey = key;
+      $("editStudentName").textContent = student.name;
+      $("editStudentId").value = student.studentId || "";
+      $("editStudentClass").value = student.className || "";
+      $("editStudentCourse").value = Array.from(student.courses || []).join("、");
+      $("editStudentDialog").classList.add("open");
+      $("editStudentId").focus();
+    }
+
+    function closeEditStudentDialog() {
+      state.editStudentKey = null;
+      $("editStudentDialog").classList.remove("open");
+    }
+
+    function confirmEditStudent() {
+      const key = state.editStudentKey;
+      const student = studentFor(key);
+      if (!student) return;
+      student.studentId = $("editStudentId").value.trim();
+      student.className = $("editStudentClass").value.trim();
+      const courses = $("editStudentCourse").value
+        .split(/[、,，]/)
+        .map((item) => item.trim())
+        .filter(Boolean);
+      if (courses.length) {
+        student.courses = new Set(courses);
+        const primaryCourse = courses[0];
+        for (const entry of state.entries) {
+          if (entry.student === key) {
+            entry.course = primaryCourse;
+            entry.studentMeta.className = student.className;
+            entry.studentMeta.studentId = student.studentId;
+          }
+        }
+        for (const session of state.aiSessions) {
+          if (session.student === key) session.course = primaryCourse;
+        }
+      } else {
+        for (const entry of state.entries) {
+          if (entry.student === key) {
+            entry.studentMeta.className = student.className;
+            entry.studentMeta.studentId = student.studentId;
+          }
+        }
+      }
+      closeEditStudentDialog();
+      renderAll();
+    }
+
+    function renderImportResult() {
+      const totalEntries = state.entries.length;
+      const totalAiSessions = state.aiSessions.length;
+      const skipped = state.files.reduce((sum, file) => sum + file.skipped, 0) + state.aiFiles.reduce((sum, file) => sum + file.skipped, 0);
+      const untrustedTimeCount = state.aiSessions.filter((session) => !session.timeTrusted).length;
+      const el = $("importResult");
+      if (!state.files.length && !state.aiFiles.length) {
+        el.textContent = "";
+        return;
+      }
+      const details = [
+        ...state.files.map((file) => `${file.name}${file.courseName ? `（课程：${file.courseName}）` : ""}：${file.entries} 个有效事件 / 跳过 ${file.skipped} 行`),
+        ...state.aiFiles.map((file) => `${file.name}${file.courseName ? `（课程：${file.courseName}）` : ""}：${file.sessions} 条 AI 会话 / 跳过 ${file.skipped} 行`)
+      ].join("；");
+      const quality = [
+        state.aiImportStats.filteredSystemMessages
+          ? `系统消息已过滤 ${state.aiImportStats.filteredSystemMessages} 条`
+          : "",
+        state.aiImportStats.mergedSnapshots
+          ? `合并重复快照 ${state.aiImportStats.mergedSnapshots} 条`
+          : "",
+        state.aiImportStats.pluginArtifactRecords
+          ? `已忽略插件临时文件记录 ${state.aiImportStats.pluginArtifactRecords} 条`
+          : "",
+        untrustedTimeCount
+          ? `时间未校准 ${untrustedTimeCount} 条`
+          : ""
+      ].filter(Boolean);
+      const fullText = `已导入 ${state.files.length} 个代码日志、${state.aiFiles.length} 个 AI 日志，共 ${totalEntries} 个有效事件、${totalAiSessions} 条 AI 会话，跳过 ${skipped} 行。${quality.length ? ` ${quality.join("；")}。` : ""}${details}`;
+      if (fullText.length <= 100) {
+        el.textContent = fullText;
+        return;
+      }
+
+      if (state.importResultExpanded) {
+        el.innerHTML = `<span>${escapeHtml(fullText)}</span> <button type="button" class="text-toggle" id="toggleImportResultBtn">收起折叠内容</button>`;
+      } else {
+        el.innerHTML = `<span>${escapeHtml(fullText.slice(0, 100))}…</span> <button type="button" class="text-toggle" id="toggleImportResultBtn">展开折叠内容</button>`;
+      }
+      $("toggleImportResultBtn").addEventListener("click", () => {
+        state.importResultExpanded = !state.importResultExpanded;
+        renderImportResult();
+      });
+    }
+
+    function rebuildFilters() {
+      const events = state.entries;
+      const courses = uniqueCourses(events, state.aiSessions);
+      const fileTypes = uniqueFileTypes(events);
+      const operations = uniqueOperations(events);
+
+      const courseSelect = $("courseFilter");
+      const currentCourse = courseSelect.value;
+      courseSelect.innerHTML = `<option value="">全部</option>${courses.map((course) => `<option value="${escapeHtml(course)}">${escapeHtml(course)}</option>`).join("")}`;
+      if (courses.includes(currentCourse)) courseSelect.value = currentCourse;
+
+      const fileSelect = $("fileTypeFilter");
+      const currentFile = fileSelect.value;
+      fileSelect.innerHTML = `<option value="">全部</option>${fileTypes.map((type) => `<option value="${escapeHtml(type)}">${escapeHtml(type)}</option>`).join("")}`;
+      if (fileTypes.includes(currentFile)) fileSelect.value = currentFile;
+
+      const operationSelect = $("operationFilter");
+      const currentOperation = operationSelect.value;
+      operationSelect.innerHTML = `<option value="">全部</option>${operations.map((operation) => `<option value="${escapeHtml(operation)}">${escapeHtml(operationLabel(operation))}</option>`).join("")}`;
+      if (operations.includes(currentOperation)) operationSelect.value = currentOperation;
+    }
+
+    function statCard(label, value, className) {
+      const display = typeof value === "string"
+        ? value
+        : Number(value).toLocaleString("zh-CN", { maximumFractionDigits: 6 });
+      return `<div class="stat-card"><div class="stat-label">${escapeHtml(label)}</div><div class="stat-value ${className}">${escapeHtml(display)}</div></div>`;
+    }
+
+    function compactTokenStatCard(label, value) {
+      const text = Number(value || 0).toLocaleString("zh-CN");
+      const digitCount = text.replace(/[^\d]/g, "").length;
+      const fontSize = Math.max(14, Math.min(26, Math.floor(260 / (digitCount + 3))));
+      return `<div class="stat-card"><div class="stat-label">${escapeHtml(label)}</div><div class="stat-value" style="font-size:${fontSize}px">${escapeHtml(text)}</div></div>`;
+    }
+
+    function emptyChart() {
+      return `<div class="empty">暂无数据</div>`;
+    }
+
+    function formatCost(value) {
+      return Number(value || 0).toFixed(2);
+    }
+
+    function aiNumberCell(value) {
+      const text = Number(value || 0).toLocaleString("zh-CN");
+      const digitCount = text.replace(/[^\d]/g, "").length;
+      const fontSize = Math.max(9, Math.min(14, Math.floor(180 / (digitCount + 3))));
+      return `<span class="ai-number" style="font-size:${fontSize}px" title="${escapeHtml(text)}">${escapeHtml(text)}</span>`;
+    }
+
+    function aiQuestionLines(session) {
+      const questions = session.messages
+        .filter((message) => message.type === "text" && message.role === "user")
+        .map((message) => message.text)
+        .filter(Boolean);
+      const lines = questions.map((question, index) =>
+        `<div class="ai-question-line" data-ai-id="${session.id}" data-question-index="${index}" title="${escapeHtml(question)}">${index + 1}. ${escapeHtml(question)}</div>`
+      ).join("");
+      return lines || `<div class="ai-question-line" data-ai-id="${session.id}" title="查看完整会话">暂无提问摘要，点击查看会话详情</div>`;
+    }
+
+    function aiTotals(sessions) {
+      return sessions.reduce((totals, session) => {
+        totals.sessions += 1;
+        totals.questions += session.questions || 0;
+        totals.replies += session.replies || 0;
+        totals.toolCalls += session.toolCalls || 0;
+        totals.tokensIn += session.tokens?.input || 0;
+        totals.tokensOut += session.tokens?.output || 0;
+        totals.cost += Number(session.tokens?.totalCost || 0);
+        return totals;
+      }, { sessions: 0, questions: 0, replies: 0, toolCalls: 0, tokensIn: 0, tokensOut: 0, cost: 0 });
+    }
+
+    function modelDistribution(sessions) {
+      const map = new Map();
+      for (const session of sessions) {
+        const model = session.model || "未知模型";
+        map.set(model, (map.get(model) || 0) + 1);
+      }
+      return Array.from(map.entries())
+        .map(([label, value]) => ({ label, value }))
+        .sort((a, b) => b.value - a.value);
+    }
+
+    function aiStudentSummaries(sessions) {
+      const map = new Map();
+      for (const student of state.students) {
+        map.set(student.key, {
+          key: student.key,
+          name: student.name,
+          className: student.className,
+          studentId: student.studentId,
+          courseNames: Array.from(student.courses || []).join("、") || "未命名课程",
+          sessions: 0,
+          questions: 0,
+          replies: 0,
+          toolCalls: 0,
+          tokensIn: 0,
+          tokensOut: 0,
+          cost: 0
+        });
+      }
+      for (const session of sessions) {
+        const item = map.get(session.student);
+        if (!item) continue;
+        item.sessions += 1;
+        item.questions += session.questions || 0;
+        item.replies += session.replies || 0;
+        item.toolCalls += session.toolCalls || 0;
+        item.tokensIn += session.tokens?.input || 0;
+        item.tokensOut += session.tokens?.output || 0;
+        item.cost += Number(session.tokens?.totalCost || 0);
+      }
+      return Array.from(map.values())
+        .filter((item) => item.sessions > 0)
+        .sort((a, b) => b.sessions - a.sessions || b.questions - a.questions);
+    }
+
+    function aiMessageHtml(message, questionIndex) {
+      if (message.type === "text") {
+        const roleClass = message.role === "user" ? "user" : "assistant";
+        const roleLabel = message.role === "user" ? "学生提问" : "AI 回答";
+        const targetClass = message.role === "user" ? " ai-question-target" : "";
+        const targetIndex = questionIndex !== undefined && questionIndex !== null
+          ? ` data-question-index="${questionIndex}"`
+          : "";
+        return `<div class="ai-message${targetClass}"${targetIndex}>
+          <span class="ai-role-badge ${roleClass}">${escapeHtml(roleLabel)}</span>
+          <div class="ai-message-text">${escapeHtml(message.text)}</div>
+        </div>`;
+      }
+      if (message.type === "tool_use") {
+        const result = message.resultPreview
+          ? `<div class="ai-tool-block">结果预览：${escapeHtml(message.resultPreview)}</div>`
+          : "";
+        const error = message.isError ? `<div class="ai-tool-block">工具执行结果：失败</div>` : "";
+        return `<div class="ai-message">
+          <span class="ai-role-badge tool">工具调用</span>
+          <div class="ai-tool-name">${escapeHtml(message.tool)}</div>
+          <div class="ai-tool-block">参数摘要：${escapeHtml(message.inputSummary || "(无)")}</div>
+          ${result}
+          ${error}
+        </div>`;
+      }
+      return `<div class="ai-message">
+        <span class="ai-role-badge tool">工具结果</span>
+        <div class="ai-tool-name">${escapeHtml(message.tool)}</div>
+        <div class="ai-tool-block">${escapeHtml(message.resultPreview || "(无)")}</div>
+        ${message.isError ? `<div class="ai-tool-block">执行结果：失败</div>` : ""}
+      </div>`;
+    }
+
+    function renderAiSessionDrawers(sessions) {
+      const groups = new Map();
+      for (const session of sessions) {
+        if (!groups.has(session.student)) groups.set(session.student, []);
+        groups.get(session.student).push(session);
+      }
+
+      const studentDrawers = Array.from(groups.entries())
+        .sort((a, b) => b[1].length - a[1].length)
+        .map(([studentKey, groupSessions]) => {
+          const student = studentFor(studentKey);
+          const totalQuestions = groupSessions.reduce((sum, session) => sum + (session.questions || 0), 0);
+          const sortedSessions = groupSessions.slice().sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+          const sessionDrawers = sortedSessions.map((session) => {
+            const title = session.title || "(无标题)";
+            const firstQuestionTime = session.firstQuestionAt || session.startedAt || session.timestamp;
+            return `<details class="ai-session-drawer">
+              <summary>
+                <span class="ai-drawer-label">
+                  <span class="ai-session-title">${escapeHtml(title)}</span>
+                  <span class="ai-drawer-arrow" aria-hidden="true">›</span>
+                </span>
+                <span class="ai-session-drawer-meta">${formatDate(firstQuestionTime)}</span>
+              </summary>
+              <div class="ai-session-drawer-body">
+                <div class="ai-session-meta">首次提问 ${formatDate(firstQuestionTime)} · ${escapeHtml(session.model || "--")} · 成本 ${formatCost(session.tokens?.totalCost)} · 提问 ${session.questions} 次 / AI 回复 ${session.replies} 次 / 工具调用 ${session.toolCalls} 次</div>
+                ${aiQuestionLines(session)}
+              </div>
+            </details>`;
+          }).join("");
+
+          return `<details class="ai-student-drawer">
+            <summary>
+              <span class="ai-drawer-label">
+                <span class="ai-student-name">${escapeHtml(student?.name || studentKey)}</span>
+                <span class="ai-drawer-arrow" aria-hidden="true">›</span>
+              </span>
+              <span class="ai-student-drawer-meta">${groupSessions.length} 个会话 / ${totalQuestions} 次提问</span>
+            </summary>
+            <div class="ai-student-drawer-body">${sessionDrawers}</div>
+          </details>`;
+        }).join("");
+
+      return studentDrawers;
+    }
+
+    function renderAiView(sessions) {
+      const container = $("view-ai");
+      if (!sessions.length) {
+        container.innerHTML = `<div class="ai-hero"><h2>AI 问答</h2><p>当前范围 0 条会话</p></div>
+          <div class="panel"><div class="panel-body"><div class="empty">暂无 AI 会话数据，请先导入 ai-session-trace.log 或 ai-session-trace.jsonl。</div></div></div>`;
+        return;
+      }
+
+      const totals = aiTotals(sessions);
+      const summaries = aiStudentSummaries(sessions);
+      const questionChartItems = summaries.map((item) => ({ label: item.name, value: item.questions }));
+      const tokenChartItems = summaries.map((item) => ({ label: item.name, input: item.tokensIn, output: item.tokensOut }));
+      const untrustedTimeCount =
+        sessions.filter((session) => !session.timeTrusted).length +
+        currentEvents().filter((entry) => !entry.timeTrusted).length;
+      const hero = `<div class="ai-hero"><h2>AI 问答</h2><p>当前范围 ${sessions.length} 条会话 / ${totals.questions} 次提问</p></div>`;
+      const timeWarning = untrustedTimeCount
+        ? `<div class="time-warning">有 ${untrustedTimeCount} 条记录未获得可信时间，时间字段可能受学生机系统时间影响。</div>`
+        : "";
+      const stats = `<div class="stats-grid ai-stats-grid">
+        ${statCard("AI 会话总数", totals.sessions, "accent")}
+        ${statCard("提问数", totals.questions, "")}
+        ${statCard("AI 回复数", totals.replies, "green")}
+        ${statCard("工具调用数", totals.toolCalls, "")}
+        ${compactTokenStatCard("Token 输入", totals.tokensIn)}
+        ${compactTokenStatCard("Token 输出", totals.tokensOut)}
+        ${statCard("总成本", formatCost(totals.cost), "")}
+      </div>`;
+
+      const charts = `<div class="panel">
+        <div class="panel-header"><h2>AI 情况总览</h2><span class="note">当前范围 ${sessions.length} 条会话</span></div>
+        <div class="panel-body">
+          <div class="charts-grid">
+            <div class="chart-card clickable" data-ai-chart="questions" title="点击放大查看详情"><span class="chart-hint">点击放大</span><h3>学生提问数量对比</h3><div class="chart-box">${questionChartItems.length ? chartBar(questionChartItems, { title: "学生提问数量对比" }) : emptyChart()}</div></div>
+            <div class="chart-card clickable" data-ai-chart="tokens" title="点击放大查看详情"><span class="chart-hint">点击放大</span><h3>学生 Token 输入 / 输出对比</h3><div class="chart-box">${tokenChartItems.length ? aiTokenGroupedChart(tokenChartItems, { title: "学生 Token 输入 / 输出对比" }) : emptyChart()}</div></div>
+          </div>
+        </div>
+      </div>`;
+
+      const summaryRows = summaries.map((item) => `<tr>
+        <td>${escapeHtml(item.name)}</td>
+        <td>${escapeHtml(item.courseNames)}</td>
+        <td>${escapeHtml([item.className, item.studentId].filter(Boolean).join(" / ") || "--")}</td>
+        <td class="numeric">${item.sessions}</td>
+        <td class="numeric">${item.questions}</td>
+        <td class="numeric">${item.replies}</td>
+        <td class="numeric">${item.toolCalls}</td>
+        <td class="numeric">${aiNumberCell(item.tokensIn)}</td>
+        <td class="numeric">${aiNumberCell(item.tokensOut)}</td>
+        <td class="numeric">${formatCost(item.cost)}</td>
+      </tr>`).join("");
+
+      container.innerHTML = `${hero}
+        ${timeWarning}
+        ${stats}
+        ${charts}
+        <div class="panel">
+          <div class="panel-header">
+            <h2>学生 AI 使用对比</h2>
+            <div class="panel-actions"><span class="note">${summaries.length} 名学生</span><button class="btn" id="exportAiSummaryBtn">导出表格</button></div>
+          </div>
+          <div class="panel-body"><div class="table-wrap"><table>
+            <thead><tr><th>姓名</th><th>课程</th><th>班级 / 学号</th><th class="numeric">会话数</th><th class="numeric">提问数</th><th class="numeric">回复数</th><th class="numeric">工具调用</th><th class="numeric">Token 输入</th><th class="numeric">Token 输出</th><th class="numeric">总成本</th></tr></thead>
+            <tbody>${summaryRows || `<tr><td colspan="10" class="empty">暂无学生数据</td></tr>`}</tbody>
+          </table></div></div>
+        </div>
+        <div class="panel">
+          <div class="panel-header">
+            <h2>AI 会话列表</h2>
+            <div class="panel-actions"><span class="note">${sessions.length} 条会话</span><button class="btn" id="exportAiSessionsBtn">导出列表</button></div>
+          </div>
+          <div class="panel-body">${renderAiSessionDrawers(sessions.slice(0, 500)) || `<div class="empty">暂无会话</div>`}</div>
+        </div>`;
+
+      container.querySelectorAll("[data-ai-id]").forEach((item) => {
+        item.addEventListener("click", () => {
+          const questionIndex = item.dataset.questionIndex !== undefined
+            ? Number(item.dataset.questionIndex)
+            : undefined;
+          openAiSessionDialog(Number(item.dataset.aiId), questionIndex);
+        });
+      });
+      container.querySelectorAll("[data-ai-chart]").forEach((card) => {
+        card.addEventListener("click", () => openAiChartModal(card.dataset.aiChart));
+      });
+      $("exportAiSummaryBtn").addEventListener("click", () => {
+        downloadBlob(
+          new Blob([aiSummaryToCsv(sessions)], { type: "text/csv;charset=utf-8" }),
+          "ai-student-summary.csv"
+        );
+      });
+      $("exportAiSessionsBtn").addEventListener("click", () => {
+        downloadBlob(
+          new Blob([aiSessionsToCsv(sessions)], { type: "text/csv;charset=utf-8" }),
+          "ai-session-list.csv"
+        );
+      });
+    }
+
+    function renderAiSessionDialog(session, questionIndex) {
+      const student = studentFor(session.student);
+      const firstQuestionTime = session.firstQuestionAt || session.startedAt || session.timestamp;
+      const meta = [
+        student?.name || session.student,
+        session.course,
+        session.model || "未知模型",
+        formatDate(firstQuestionTime),
+        session.sessionId
+      ].filter(Boolean).join(" / ");
+      $("aiSessionDialogMeta").textContent = meta;
+      let currentQuestionIndex = 0;
+      const messageHtml = session.messages.map((message) => {
+        const isUserQuestion = message.type === "text" && message.role === "user";
+        const index = isUserQuestion ? currentQuestionIndex++ : undefined;
+        return aiMessageHtml(message, index);
+      }).join("");
+      $("aiSessionDialogContent").innerHTML = `<div class="ai-session-summary">
+        <h3>${escapeHtml(session.title || "(无标题)")}</h3>
+        <p>学生：${escapeHtml(student?.name || session.student)}</p>
+        <p>模型：${escapeHtml(session.model || "--")} / Provider：${escapeHtml(session.provider || "--")}</p>
+        <p>首次提问：${formatDate(firstQuestionTime)} ${session.timeTrusted ? "（可信时间）" : "（时间未校准）"}</p>
+        <p>提问 ${session.questions} 次 / AI 回复 ${session.replies} 次 / 工具调用 ${session.toolCalls} 次 / 成本 ${formatCost(session.tokens?.totalCost)}</p>
+      </div>
+      ${session.prompt ? `<div class="ai-prompt"><strong>初始提示词</strong>\n${escapeHtml(session.prompt)}</div>` : ""}
+      ${messageHtml || `<div class="empty">该会话没有可展示的消息。</div>`}`;
+      $("aiSessionDialog").classList.add("open");
+      if (questionIndex !== undefined && questionIndex !== null) {
+        requestAnimationFrame(() => {
+          const target = $("aiSessionDialogContent").querySelector(`[data-question-index="${questionIndex}"]`);
+          if (!target) return;
+          const content = $("aiSessionDialogContent");
+          content.scrollTop += target.getBoundingClientRect().top - content.getBoundingClientRect().top - 16;
+          target.classList.add("ai-question-highlight");
+        });
+      }
+    }
+
+    function openAiSessionDialog(id, questionIndex) {
+      const session = state.aiSessions.find((item) => item.id === id);
+      if (!session) return;
+      state.openAiSessionId = id;
+      renderAiSessionDialog(session, questionIndex);
+    }
+
+    function closeAiSessionDialog() {
+      state.openAiSessionId = null;
+      $("aiSessionDialog").classList.remove("open");
+    }
+
+    function aiChartModalTitle(type) {
+      return type === "tokens" ? "学生 Token 输入 / 输出对比" : "学生提问数量对比";
+    }
+
+    function aiChartModalRows(summaries, type) {
+      if (type === "tokens") {
+        return summaries.map((item) => `<tr>
+          <td>${escapeHtml(item.name)}</td>
+          <td class="numeric">${aiNumberCell(item.tokensIn)}</td>
+          <td class="numeric">${aiNumberCell(item.tokensOut)}</td>
+          <td class="numeric">${item.sessions}</td>
+          <td class="numeric">${formatCost(item.cost)}</td>
+        </tr>`).join("");
+      }
+      return summaries.map((item) => `<tr>
+        <td>${escapeHtml(item.name)}</td>
+        <td class="numeric">${item.questions}</td>
+        <td class="numeric">${item.sessions}</td>
+        <td class="numeric">${item.replies}</td>
+        <td class="numeric">${item.toolCalls}</td>
+      </tr>`).join("");
+    }
+
+    function renderAiChartModal() {
+      const type = state.aiChartType || "questions";
+      const zoom = state.aiChartZoom || 1;
+      const sessions = currentAiSessions();
+      const summaries = aiStudentSummaries(sessions);
+      const title = aiChartModalTitle(type);
+      const chart = type === "tokens"
+        ? aiTokenGroupedChart(summaries.map((item) => ({ label: item.name, input: item.tokensIn, output: item.tokensOut })), { title })
+        : chartBar(summaries.map((item) => ({ label: item.name, value: item.questions })), { title });
+      const columns = type === "tokens"
+        ? "<th>学生</th><th class=\"numeric\">Token 输入</th><th class=\"numeric\">Token 输出</th><th class=\"numeric\">会话数</th><th class=\"numeric\">总成本</th>"
+        : "<th>学生</th><th class=\"numeric\">提问数</th><th class=\"numeric\">会话数</th><th class=\"numeric\">回复数</th><th class=\"numeric\">工具调用</th>";
+      const rows = aiChartModalRows(summaries, type);
+      const zoomPercent = `${Math.round(zoom * 100)}%`;
+      $("aiChartDialogTitle").textContent = title;
+      $("aiChartDialogContent").innerHTML = `<p class="note">当前范围 ${sessions.length} 条 AI 会话 / ${summaries.length} 名学生</p>
+        <div class="ai-chart-zoom-toolbar">
+          <button class="ai-chart-zoom-btn" data-ai-zoom="out">缩小</button>
+          <button class="ai-chart-zoom-btn" data-ai-zoom="in">放大</button>
+          <span class="note">${zoomPercent}</span>
+        </div>
+        <div class="ai-chart-scroll">
+          <div class="ai-chart-stage" style="width:${Math.round(720 * zoom)}px;height:${Math.round(260 * zoom)}px">
+            <div class="ai-chart-scalable" style="transform:scale(${zoom})">${chart}</div>
+          </div>
+        </div>
+        <div class="time-detail"><h2>数据明细</h2><div class="table-wrap"><table>
+          <thead><tr>${columns}</tr></thead>
+          <tbody>${rows || `<tr><td colspan="5" class="empty">暂无数据</td></tr>`}</tbody>
+        </table></div></div>`;
+      $("aiChartDialogContent").querySelectorAll("[data-ai-zoom]").forEach((button) => {
+        button.addEventListener("click", () => {
+          if (button.dataset.aiZoom === "in") state.aiChartZoom = Math.min(3, state.aiChartZoom + 0.25);
+          else state.aiChartZoom = Math.max(0.75, state.aiChartZoom - 0.25);
+          renderAiChartModal();
+        });
+      });
+    }
+
+    function openAiChartModal(type) {
+      state.aiChartType = type;
+      state.aiChartZoom = 1;
+      renderAiChartModal();
+      $("aiChartDialog").classList.add("open");
+    }
+
+    function closeAiChartModal() {
+      state.aiChartType = null;
+      state.aiChartZoom = 1;
+      $("aiChartDialog").classList.remove("open");
+    }
+
+    function summaryTable(summaries, showClass = true) {
+      if (!summaries.length) return `<div class="empty">暂无数据</div>`;
+      const rows = summaries.map((item) => `
+        <tr>
+          <td>${escapeHtml(item.name)}</td>
+          <td>${escapeHtml(item.courseNames || item.course || "--")}</td>
+          ${showClass ? `<td>${escapeHtml([item.className, item.studentId].filter(Boolean).join(" / ") || "--")}</td>` : ""}
+          <td class="numeric">${item.editEvents}</td>
+          ${showClass ? `<td class="numeric">${item.fileOps}</td>` : ""}
+          <td class="numeric">${item.fileCount}</td>
+          <td class="numeric">${item.insertedChars}</td>
+          <td class="numeric">${item.deletedChars}</td>
+          <td>${formatDate(item.lastTime)}</td>
+        </tr>`).join("");
+      return `<div class="table-wrap"><table>
+        <thead><tr><th>姓名</th><th>课程</th>${showClass ? "<th>班级 / 学号</th>" : ""}<th class="numeric">编辑事件</th>${showClass ? "<th class=\"numeric\">文件操作</th>" : ""}<th class="numeric">文件数</th><th class="numeric">插入字符</th><th class="numeric">删除字符</th><th>最后修改时间</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table></div>`;
+    }
+
+    function renderAnalysisEmpty() {
+      $("view-overview").innerHTML = `<div class="panel">
+        <div class="panel-body"><div class="empty">请至少选择一名学生后查看可视化分析。</div></div>
+      </div>`;
+    }
+
+    function renderOverview(events) {
+      const totals = statTotals(events);
+      const studentChart = studentEditDistribution(events);
+      const operations = operationDistribution(events);
+      const fileTypes = fileTypeDistribution(events);
+      const stats = `<div class="stats-grid">
+        ${statCard("学生人数", totals.students, "")}
+        ${statCard("总编辑事件", totals.editEvents, "accent")}
+        ${statCard("文件数", totals.files, "")}
+        ${statCard("插入字符", totals.insertedChars, "green")}
+        ${statCard("删除字符", totals.deletedChars, "")}
+      </div>`;
+      const charts = `<div class="panel">
+        <div class="panel-header"><h2>当前范围总览</h2><span class="note">文件操作 ${totals.fileOps} 次</span></div>
+        <div class="panel-body">
+          <div class="charts-grid">
+            <div class="chart-card clickable" data-chart="students" title="点击放大查看详情"><span class="chart-hint">点击放大</span><h3>学生编辑次数对比</h3><div class="chart-box">${studentChart.length ? chartBar(studentChart, { title: "学生编辑次数对比" }) : emptyChart()}</div></div>
+            <div class="chart-card clickable" data-chart="hours" title="点击放大查看详情"><span class="chart-hint">点击放大</span><h3>修改时间分布</h3><div class="chart-box">${timeBinsFor(events, 60).length ? chartBar(timeBinsFor(events, 60), { title: "修改时间分布" }) : emptyChart()}</div></div>
+            <div class="chart-card clickable" data-chart="operations" title="点击放大查看详情"><span class="chart-hint">点击放大</span><h3>操作类型分布</h3><div class="chart-box chart-donut">${chartDonut(operations)}</div></div>
+            <div class="chart-card clickable" data-chart="fileTypes" title="点击放大查看详情"><span class="chart-hint">点击放大</span><h3>文件类型分布</h3><div class="chart-box">${fileTypes.length ? chartHBar(fileTypes, { title: "文件类型分布" }) : emptyChart()}</div></div>
+          </div>
+        </div>
+      </div>`;
+      $("view-overview").innerHTML = stats + charts;
+    }
+
+    function operationBadges(entry) {
+      if (entry.eventType.startsWith("file.")) return `<span class="badge file">${escapeHtml(operationLabel(entry.eventType))}</span>`;
+      const parts = new Map();
+      for (const change of entry.changes) parts.set(change.operation, (parts.get(change.operation) || 0) + 1);
+      return Array.from(parts.entries()).map(([operation, count]) => `<span class="badge ${operation}">${operationLabel(operation)} ${count}</span>`).join(" ") || `<span class="badge">无改动</span>`;
+    }
+
+    function previewText(entry, limit) {
+      if (entry.eventType.startsWith("file.")) {
+        const oldFile = entry.raw?.oldFile;
+        return oldFile ? `${oldFile} -> ${entry.file}` : `${operationLabel(entry.eventType)} ${entry.file}`;
+      }
+      const text = entry.changes.map((change) => change.text).filter(Boolean).join("\n");
+      if (!text) return "(无文本)";
+      return text.length > limit ? `${text.slice(0, limit)}…` : text;
+    }
+
+    function compactEventPreview(entry) {
+      const compact = previewText(entry, Number.MAX_SAFE_INTEGER).replace(/\s+/g, "");
+      return `${(compact || "无文本").slice(0, 10)}…`;
+    }
+
+    function renderDetail(events, studentKey) {
+      const student = studentFor(studentKey);
+      if (!student) {
+        $("view-detail").innerHTML = `<div class="panel"><div class="panel-body"><div class="empty">请只勾选一名学生后查看详情。</div></div></div>`;
+        return;
+      }
+      const eventsByStudent = events.filter((entry) => entry.student === studentKey);
+      const totals = statTotals(eventsByStudent);
+      const files = uniqueFiles(eventsByStudent);
+      const timeline = eventsByStudent.slice().sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+      const operations = operationDistribution(eventsByStudent);
+      const fileTypes = fileTypeDistribution(eventsByStudent);
+      const detailTimeBins = timeBinsFor(eventsByStudent, 60);
+      const stats = `<div class="stats-grid">
+        ${statCard("编辑事件", totals.editEvents, "accent")}
+        ${statCard("文件操作", totals.fileOps, "")}
+        ${statCard("文件数", totals.files, "")}
+        ${statCard("插入字符", totals.insertedChars, "green")}
+        ${statCard("删除字符", totals.deletedChars, "")}
+      </div>`;
+      const charts = `<div class="charts-grid">
+        <div class="chart-card clickable" data-chart="detail-operations" title="点击放大查看详情"><span class="chart-hint">点击放大</span><h3>操作类型分布</h3><div class="chart-box chart-donut">${chartDonut(operations)}</div></div>
+        <div class="chart-card clickable" data-chart="detail-fileTypes" title="点击放大查看详情"><span class="chart-hint">点击放大</span><h3>文件类型分布</h3><div class="chart-box">${fileTypes.length ? chartHBar(fileTypes, { title: "文件类型分布" }) : emptyChart()}</div></div>
+      </div>
+      <div class="chart-card clickable" data-chart="detail-hours" title="点击放大查看详情" style="width:100%;margin-top:12px;">
+        <span class="chart-hint">点击放大</span><h3>修改时间分布</h3>
+        <div class="chart-box">${detailTimeBins.length ? chartBar(detailTimeBins, { title: "修改时间分布" }) : emptyChart()}</div>
+      </div>`;
+      const fileRows = files.map((item) => `<tr>
+        <td class="path-cell">${escapeHtml(item.file)}</td>
+        <td>${escapeHtml(item.fileType)}</td>
+        <td class="numeric">${item.editCount}</td>
+        <td class="numeric">${item.fileOpCount}</td>
+        <td class="numeric">${item.insertedChars}</td>
+        <td class="numeric">${item.deletedChars}</td>
+        ${formatDateTimeCell(item.lastTime)}
+      </tr>`).join("");
+      const timelineHtml = timeline.length ? timeline.slice(0, 200).map((entry) => `<div class="timeline-item">
+        <div class="timeline-head"><span class="timeline-time">${formatDate(entry.timestamp)}</span><span>${operationBadges(entry)}</span></div>
+        <div class="timeline-file">${escapeHtml(entry.file)}</div>
+        <div class="preview">${escapeHtml(previewText(entry, 260))}</div>
+      </div>`).join("") : `<div class="empty">暂无时间线数据</div>`;
+      $("view-detail").innerHTML = `<div class="panel">
+        <div class="panel-header"><h2>${escapeHtml(student.name)}的详情</h2><span class="note">${escapeHtml([student.studentId, student.className].filter(Boolean).join(" / ") || "未填写学号 / 班级")}</span></div>
+        <div class="panel-body">${stats}${charts}</div>
+      </div>
+      <div class="panel">
+        <div class="panel-header">
+          <h2>文件改动明细</h2>
+          <div class="panel-actions"><span class="note">${files.length} 个文件</span><button class="btn" id="exportStudentFilesBtn">导出表格</button></div>
+        </div>
+        <div class="panel-body"><div class="table-wrap"><table>
+          <thead><tr><th>文件路径</th><th>类型</th><th class="numeric">编辑次数</th><th class="numeric">文件操作</th><th class="numeric">插入字符</th><th class="numeric">删除字符</th><th>最后修改</th></tr></thead>
+          <tbody>${fileRows || `<tr><td colspan="7" class="empty">暂无文件</td></tr>`}</tbody>
+        </table></div></div>
+      </div>
+      <div class="panel">
+        <div class="panel-header">
+          <h2>编辑时间线</h2>
+          <div class="panel-actions"><span class="note">${timeline.length} 条事件，最多展示 200 条</span><button class="btn" id="exportStudentTimelineBtn">导出表格</button></div>
+        </div>
+        <div class="panel-body"><div class="timeline">${timelineHtml}</div></div>
+      </div>`;
+      $("exportStudentFilesBtn").addEventListener("click", () => {
+        downloadBlob(
+          new Blob([studentFilesToCsv(files)], { type: "text/csv;charset=utf-8" }),
+          "student-file-details.csv"
+        );
+      });
+      $("exportStudentTimelineBtn").addEventListener("click", () => {
+        downloadBlob(
+          new Blob([studentTimelineToCsv(timeline)], { type: "text/csv;charset=utf-8" }),
+          "student-edit-timeline.csv"
+        );
+      });
+    }
+
+    function renderCompare(events) {
+      const selected = selectedStudentKeys();
+      const selectedStudents = state.students.filter((student) => selected.has(student.key));
+      const keys = new Set(selectedStudents.map((student) => student.key));
+      const compareEvents = events.filter((entry) => keys.has(entry.student));
+      const summaries = studentSummaries(compareEvents);
+      if (selectedStudents.length < 2) {
+        $("view-compare").innerHTML = `<div class="panel"><div class="panel-body"><div class="empty">请勾选两名或更多学生后查看群体对比。</div></div></div>`;
+        return;
+      }
+      const editChart = selectedStudents.map((student) => {
+        const summary = summaries.find((item) => item.key === student.key);
+        return { label: student.name, value: summary?.editEvents || 0 };
+      });
+      const charChart = selectedStudents.map((student, index) => {
+        const summary = summaries.find((item) => item.key === student.key);
+        return { label: student.name, value: (summary?.insertedChars || 0) + (summary?.deletedChars || 0), color: COLORS[(index + 1) % COLORS.length] };
+      });
+      const rows = summaries.map((item) => `<tr>
+        <td>${escapeHtml(item.name)}</td>
+        <td>${escapeHtml(item.courseNames || item.course || "--")}</td>
+        <td>${escapeHtml([item.className, item.studentId].filter(Boolean).join(" / ") || "--")}</td>
+        <td class="numeric">${item.editEvents}</td>
+        <td class="numeric">${item.fileOps}</td>
+        <td class="numeric">${item.fileCount}</td>
+        <td class="numeric">${item.insertedChars}</td>
+        <td class="numeric">${item.deletedChars}</td>
+        <td>${formatDate(item.lastTime)}</td>
+      </tr>`).join("");
+      const operationTable = selectedStudents.map((student) => {
+        const counts = { insert: 0, delete: 0, replace: 0, "file.create": 0, "file.delete": 0, "file.rename": 0, "file.move": 0 };
+        for (const entry of compareEvents) {
+          if (entry.student !== student.key) continue;
+          if (entry.eventType === "edit") {
+            for (const change of entry.changes) counts[change.operation] = (counts[change.operation] || 0) + 1;
+          } else if (counts[entry.eventType] !== undefined) counts[entry.eventType] += 1;
+        }
+        return `<tr>
+          <td>${escapeHtml(student.name)}</td>
+          <td class="numeric">${counts.insert}</td>
+          <td class="numeric">${counts.delete}</td>
+          <td class="numeric">${counts.replace}</td>
+          <td class="numeric">${counts["file.create"]}</td>
+          <td class="numeric">${counts["file.delete"]}</td>
+          <td class="numeric">${counts["file.rename"]}</td>
+          <td class="numeric">${counts["file.move"]}</td>
+        </tr>`;
+      }).join("");
+      $("view-compare").innerHTML = `<div class="panel">
+        <div class="panel-header"><h2>群体对比</h2><span class="note">${selectedStudents.length} 名学生</span></div>
+        <div class="panel-body"><div class="charts-grid">
+          <div class="chart-card clickable" data-chart="compare-events" title="点击放大查看详情"><span class="chart-hint">点击放大</span><h3>编辑事件数</h3><div class="chart-box">${chartBar(editChart, { title: "编辑事件数" })}</div></div>
+          <div class="chart-card clickable" data-chart="compare-chars" title="点击放大查看详情"><span class="chart-hint">点击放大</span><h3>插入与删除字符合计</h3><div class="chart-box">${chartBar(charChart, { title: "插入与删除字符合计" })}</div></div>
+        </div></div>
+      </div>
+      <div class="panel">
+        <div class="panel-header">
+          <h2>编辑量与文件覆盖范围</h2>
+          <div class="panel-actions"><button class="btn" id="exportCompareCoverageBtn">导出表格</button></div>
+        </div>
+        <div class="panel-body"><div class="table-wrap"><table>
+          <thead><tr><th>姓名</th><th>课程</th><th>班级 / 学号</th><th class="numeric">编辑事件</th><th class="numeric">文件操作</th><th class="numeric">文件数</th><th class="numeric">插入字符</th><th class="numeric">删除字符</th><th>最后修改时间</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table></div></div>
+      </div>
+      <div class="panel">
+        <div class="panel-header">
+          <h2>操作类型对比</h2>
+          <div class="panel-actions"><button class="btn" id="exportCompareOperationsBtn">导出表格</button></div>
+        </div>
+        <div class="panel-body"><div class="table-wrap"><table>
+          <thead><tr><th>姓名</th><th class="numeric">插入</th><th class="numeric">删除</th><th class="numeric">替换</th><th class="numeric">文件新建</th><th class="numeric">文件删除</th><th class="numeric">文件重命名</th><th class="numeric">文件移动</th></tr></thead>
+          <tbody>${operationTable}</tbody>
+        </table></div></div>
+      </div>`;
+      $("exportCompareCoverageBtn").addEventListener("click", () => {
+        downloadBlob(
+          new Blob([compareCoverageToCsv(summaries)], { type: "text/csv;charset=utf-8" }),
+          "student-edit-coverage.csv"
+        );
+      });
+      $("exportCompareOperationsBtn").addEventListener("click", () => {
+        downloadBlob(
+          new Blob([compareOperationsToCsv(selectedStudents, compareEvents)], { type: "text/csv;charset=utf-8" }),
+          "student-operation-comparison.csv"
+        );
+      });
+    }
+
+    function fileSortValue(item, key) {
+      if (key === "lastTime") return item.lastTime ? item.lastTime.getTime() : 0;
+      if (["editCount", "fileOpCount", "insertedChars", "deletedChars"].includes(key)) return Number(item[key] || 0);
+      return String(item[key] || "").toLowerCase();
+    }
+
+    function sortFiles(files) {
+      const key = state.fileSortKey;
+      const dir = state.fileSortDir === "asc" ? 1 : -1;
+      return files.slice().sort((a, b) => {
+        const valueA = fileSortValue(a, key);
+        const valueB = fileSortValue(b, key);
+        if (typeof valueA === "number" || typeof valueB === "number") {
+          return (valueA < valueB ? -1 : valueA > valueB ? 1 : 0) * dir;
+        }
+        return String(valueA).localeCompare(String(valueB), "zh-CN") * dir;
+      });
+    }
+
+    function eventTextLength(entry) {
+      return entry.changes.reduce((sum, change) => sum + change.text.length, 0);
+    }
+
+    function eventSortValue(entry, key) {
+      if (key === "timestamp") return entry.timestamp ? entry.timestamp.getTime() : 0;
+      if (key === "textLength") return eventTextLength(entry);
+      if (key === "operation") {
+        return entry.eventType.startsWith("file.")
+          ? operationLabel(entry.eventType).toLowerCase()
+          : entry.changes.map((change) => operationLabel(change.operation)).join(" ").toLowerCase();
+      }
+      if (key === "preview") return compactEventPreview(entry).toLowerCase();
+      return String(entry[key] || "").toLowerCase();
+    }
+
+    function sortEvents(events) {
+      const key = state.eventSortKey;
+      const dir = state.eventSortDir === "asc" ? 1 : -1;
+      return events.slice().sort((a, b) => {
+        const valueA = eventSortValue(a, key);
+        const valueB = eventSortValue(b, key);
+        if (typeof valueA === "number" || typeof valueB === "number") {
+          return (valueA < valueB ? -1 : valueA > valueB ? 1 : 0) * dir;
+        }
+        return String(valueA).localeCompare(String(valueB), "zh-CN") * dir;
+      });
+    }
+
+    function renderFiles(events) {
+      const files = sortFiles(uniqueFiles(events));
+      const pageCount = Math.max(1, Math.ceil(files.length / FILE_PAGE_SIZE));
+      if (state.filePage >= pageCount) state.filePage = pageCount - 1;
+      const pageFiles = files.slice(state.filePage * FILE_PAGE_SIZE, (state.filePage + 1) * FILE_PAGE_SIZE);
+      const sortArrow = (key) => state.fileSortKey === key ? (state.fileSortDir === "asc" ? "↑" : "↓") : "↕";
+      const rows = pageFiles.map((item) => `<tr>
+        <td>${escapeHtml(item.student)}</td>
+        <td>${escapeHtml(item.course || "--")}</td>
+        <td class="path-cell">${escapeHtml(item.file)}</td>
+        <td>${escapeHtml(item.fileType)}</td>
+        <td class="numeric">${item.editCount}</td>
+        <td class="numeric">${item.fileOpCount}</td>
+        <td class="numeric">${item.insertedChars}</td>
+        <td class="numeric">${item.deletedChars}</td>
+        ${formatDateTimeCell(item.lastTime)}
+      </tr>`).join("");
+      const pagination = files.length > FILE_PAGE_SIZE ? `<div class="pagination">
+        <button class="btn" id="prevFilePageBtn" ${state.filePage === 0 ? "disabled" : ""}>上一页</button>
+        <span>第 ${state.filePage + 1} / ${pageCount} 页，共 ${files.length} 个文件</span>
+        <button class="btn" id="nextFilePageBtn" ${state.filePage >= pageCount - 1 ? "disabled" : ""}>下一页</button>
+      </div>` : "";
+      $("view-files").innerHTML = `<div class="panel">
+        <div class="panel-header"><h2>文件改动明细</h2><div class="panel-actions"><span class="note">${files.length} 个文件</span><button class="btn" id="exportFilteredFilesBtn">导出筛选数据</button></div></div>
+        <div class="panel-body"><div class="table-wrap"><table>
+          <thead><tr><th class="sortable" data-sort="student">学生 ${sortArrow("student")}</th><th class="sortable" data-sort="course">课程 ${sortArrow("course")}</th><th class="sortable" data-sort="file">文件路径 ${sortArrow("file")}</th><th class="sortable" data-sort="fileType">类型 ${sortArrow("fileType")}</th><th class="sortable numeric" data-sort="editCount">编辑次数 ${sortArrow("editCount")}</th><th class="sortable numeric" data-sort="fileOpCount">文件操作 ${sortArrow("fileOpCount")}</th><th class="sortable numeric" data-sort="insertedChars">插入字符 ${sortArrow("insertedChars")}</th><th class="sortable numeric" data-sort="deletedChars">删除字符 ${sortArrow("deletedChars")}</th><th class="sortable" data-sort="lastTime">最后修改 ${sortArrow("lastTime")}</th></tr></thead>
+          <tbody>${rows || `<tr><td colspan="9" class="empty">暂无文件</td></tr>`}</tbody>
+        </table></div>${pagination}</div>
+      </div>`;
+      document.querySelectorAll("#view-files th.sortable").forEach((header) => {
+        header.addEventListener("click", () => {
+          const key = header.dataset.sort;
+          if (state.fileSortKey === key) {
+            state.fileSortDir = state.fileSortDir === "asc" ? "desc" : "asc";
+          } else {
+            state.fileSortKey = key;
+            state.fileSortDir = ["student", "course", "file", "fileType"].includes(key) ? "asc" : "desc";
+          }
+          state.filePage = 0;
+          updateView();
+        });
+      });
+      const prevFile = $("prevFilePageBtn");
+      const nextFile = $("nextFilePageBtn");
+      if (prevFile) prevFile.addEventListener("click", () => { state.filePage -= 1; updateView(); });
+      if (nextFile) nextFile.addEventListener("click", () => { state.filePage += 1; updateView(); });
+      $("exportFilteredFilesBtn").addEventListener("click", exportFilteredFilesCsv);
+    }
+
+    function eventRows(events, page) {
+      const start = page * PAGE_SIZE;
+      return events.slice(start, start + PAGE_SIZE).map((entry) => {
+        const [datePart, timePart = ""] = formatDate(entry.timestamp).split(" ");
+        return `<tr>
+        <td class="event-time"><span>${escapeHtml(datePart)}</span><span>${escapeHtml(timePart)}</span></td>
+        <td>${escapeHtml(entry.student)}</td>
+        <td>${escapeHtml(entry.course || "--")}</td>
+        <td class="path-cell">${escapeHtml(entry.file)}</td>
+        <td>${escapeHtml(entry.fileType)}</td>
+        <td><div class="operation-list">${operationBadges(entry)}</div></td>
+        <td class="numeric">${entry.changes.reduce((sum, change) => sum + change.text.length, 0)}</td>
+        <td class="preview-cell"><button class="preview-btn" data-preview-id="${entry.id}">${escapeHtml(compactEventPreview(entry))}</button></td>
+      </tr>`;
+      }).join("");
+    }
+
+    function renderEvents(events) {
+      const sorted = sortEvents(events);
+      const pageCount = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
+      if (state.eventPage >= pageCount) state.eventPage = pageCount - 1;
+      const rows = eventRows(sorted, state.eventPage);
+      const sortArrow = (key) => state.eventSortKey === key ? (state.eventSortDir === "asc" ? "↑" : "↓") : "↕";
+      const pagination = sorted.length > PAGE_SIZE ? `<div class="pagination">
+        <button class="btn" id="prevPageBtn" ${state.eventPage === 0 ? "disabled" : ""}>上一页</button>
+        <span>第 ${state.eventPage + 1} / ${pageCount} 页，共 ${sorted.length} 条</span>
+        <button class="btn" id="nextPageBtn" ${state.eventPage >= pageCount - 1 ? "disabled" : ""}>下一页</button>
+      </div>` : "";
+      $("view-events").innerHTML = `<div class="panel">
+        <div class="panel-header"><h2>事件明细</h2><div class="panel-actions"><span class="note">${sorted.length} 条事件</span><button class="btn" id="exportFilteredEventsBtn">导出筛选数据</button></div></div>
+        <div class="panel-body"><div class="table-wrap"><table>
+          <thead><tr><th class="sortable" data-event-sort="timestamp">时间 ${sortArrow("timestamp")}</th><th class="sortable" data-event-sort="student">学生 ${sortArrow("student")}</th><th class="sortable" data-event-sort="course">课程 ${sortArrow("course")}</th><th class="sortable" data-event-sort="file">文件 ${sortArrow("file")}</th><th class="sortable" data-event-sort="fileType">类型 ${sortArrow("fileType")}</th><th class="sortable" data-event-sort="operation">操作类型 ${sortArrow("operation")}</th><th class="sortable numeric" data-event-sort="textLength">文本长度 ${sortArrow("textLength")}</th><th class="sortable" data-event-sort="preview">预览 ${sortArrow("preview")}</th></tr></thead>
+          <tbody>${rows || `<tr><td colspan="8" class="empty">暂无事件</td></tr>`}</tbody>
+        </table></div>${pagination}</div>
+      </div>`;
+      const prev = $("prevPageBtn");
+      const next = $("nextPageBtn");
+      if (prev) prev.addEventListener("click", () => { state.eventPage -= 1; updateView(); });
+      if (next) next.addEventListener("click", () => { state.eventPage += 1; updateView(); });
+      $("view-events").querySelectorAll("th.sortable").forEach((header) => {
+        header.addEventListener("click", () => {
+          const key = header.dataset.eventSort;
+          if (state.eventSortKey === key) {
+            state.eventSortDir = state.eventSortDir === "asc" ? "desc" : "asc";
+          } else {
+            state.eventSortKey = key;
+            state.eventSortDir = ["student", "course", "file", "fileType", "operation", "preview"].includes(key) ? "asc" : "desc";
+          }
+          state.eventPage = 0;
+          updateView();
+        });
+      });
+      $("exportFilteredEventsBtn").addEventListener("click", exportEventsCsv);
+    }
+
+    function updateView() {
+      const events = currentEvents();
+      $("filterCount").textContent = `当前范围 ${events.length} 条事件`;
+      rebuildFilters();
+      renderStudentList();
+      const selected = selectedStudentKeys();
+      const selectedCount = selected.size;
+      const analysisActive = state.activeTab === "analysis";
+      const operationsActive = state.activeTab === "operations";
+      document.querySelectorAll(".tab").forEach((tab) => tab.classList.toggle("active", tab.dataset.tab === state.activeTab));
+      document.querySelectorAll(".sub-tab").forEach((tab) => {
+        tab.classList.toggle("active", tab.dataset.operationTab === state.operationView);
+      });
+      $("view-overview").style.display = analysisActive && selectedCount !== 1 ? "" : "none";
+      $("view-detail").style.display = analysisActive && selectedCount === 1 ? "" : "none";
+      $("view-compare").style.display = analysisActive && selectedCount >= 2 ? "" : "none";
+      $("operationTabs").style.display = operationsActive ? "" : "none";
+      $("view-files").style.display = operationsActive && state.operationView === "files" ? "" : "none";
+      $("view-events").style.display = operationsActive && state.operationView === "events" ? "" : "none";
+      $("view-ai").style.display = state.activeTab === "ai" ? "" : "none";
+      if (analysisActive && selectedCount === 0) {
+        renderAnalysisEmpty();
+      } else if (analysisActive && selectedCount === 1) {
+        renderDetail(events, Array.from(selected)[0]);
+      } else if (analysisActive) {
+        renderOverview(events);
+        renderCompare(events);
+      }
+      if (operationsActive && state.operationView === "files") renderFiles(events);
+      if (operationsActive && state.operationView === "events") renderEvents(events);
+      if (state.activeTab === "ai") renderAiView(currentAiSessions());
+      const codeEnabled = events.length > 0;
+      const aiEnabled = currentAiSessions().length > 0;
+      $("exportReportBtn").disabled = !(codeEnabled || aiEnabled);
+    }
+
+    function renderAll() {
+      rebuildFilters();
+      renderImportResult();
+      renderStudentList();
+      updateView();
+    }
+
+    function upsertStudent(studentKey, studentMeta, courseName) {
+      const existing = state.students.find((student) => student.key === studentKey);
+      if (!existing) {
+        state.students.push({
+          key: studentKey,
+          name: studentKey,
+          className: studentMeta.className || "",
+          studentId: studentMeta.studentId || "",
+          courses: new Set([courseName || "未命名课程"])
+        });
+        return;
+      }
+      if (!existing.className && studentMeta.className) {
+        existing.className = studentMeta.className;
+        existing.studentId = studentMeta.studentId;
+      }
+      existing.courses = existing.courses || new Set();
+      existing.courses.add(courseName || "未命名课程");
+    }
+
+    function addUniqueAiSession(session) {
+      if (!session.sessionId) {
+        state.aiSessions.push(session);
+        return 1;
+      }
+
+      const existingIndex = state.aiSessions.findIndex(
+        (item) => item.sessionId === session.sessionId && item.student === session.student
+      );
+      if (existingIndex === -1) {
+        state.aiSessions.push(session);
+        return 1;
+      }
+
+      const existing = state.aiSessions[existingIndex];
+      const existingTime = existing.updatedAt?.getTime?.() ?? existing.timestamp?.getTime?.() ?? 0;
+      const newTime = session.updatedAt?.getTime?.() ?? session.timestamp?.getTime?.() ?? 0;
+      if (newTime >= existingTime) {
+        state.aiSessions[existingIndex] = session;
+      }
+      return 0;
+    }
+
+    async function parseFile(file, courseName) {
+      let text = await file.text();
+      if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+      const lines = text.split(/\r?\n/);
+      const editRaws = [];
+      const aiRaws = [];
+      let skipped = 0;
+      let ignoredPluginArtifacts = 0;
+      lines.forEach((line, index) => {
+        const trimmed = line.trim();
+        if (!trimmed) {
+          if (index === lines.length - 1 && /\r?\n$/.test(text)) return;
+          skipped += 1;
+          return;
+        }
+        let raw;
+        try { raw = JSON.parse(trimmed); }
+        catch { skipped += 1; return; }
+        if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+          skipped += 1;
+          return;
+        }
+        if (isAiSessionRaw(raw)) {
+          aiRaws.push(raw);
+        } else if (isPluginArtifactEntry(raw)) {
+          ignoredPluginArtifacts += 1;
+        } else {
+          editRaws.push(raw);
+        }
+      });
+      const filenameName = fileNameToStudent(file.name);
+      const firstEmbedded = [...editRaws, ...aiRaws].map(getEmbeddedStudent).find(Boolean);
+      const pathStudent = studentFromRelativePath(relativePathOf(file));
+      const identity = resolveStudentIdentity(firstEmbedded, pathStudent);
+      let studentKey = filenameName || identity.name || "";
+      if (!studentKey) {
+        state.unnamedCount += 1;
+        studentKey = `学生${state.unnamedCount}`;
+      }
+      const studentMeta = { className: identity.className, studentId: identity.studentId };
+      const normalized = editRaws.map((raw) => normalizeEntry(raw, studentKey, studentMeta, courseName));
+      const rawAiSessions = aiRaws.map((raw) => normalizeAiSession(raw, studentKey, courseName));
+      let addedAiSessionCount = 0;
+      for (const session of rawAiSessions) {
+        addedAiSessionCount += addUniqueAiSession(session);
+      }
+      state.aiImportStats.filteredSystemMessages += rawAiSessions.reduce(
+        (sum, session) => sum + (session.filteredSystemMessages || 0),
+        0
+      );
+      state.aiImportStats.mergedSnapshots += Math.max(0, rawAiSessions.length - addedAiSessionCount);
+      state.aiImportStats.pluginArtifactRecords += ignoredPluginArtifacts;
+      if (normalized.length) {
+        state.files.push({ name: file.name, student: studentKey, courseName, entries: normalized.length, skipped, ignoredPluginArtifacts });
+      }
+      if (rawAiSessions.length) {
+        state.aiFiles.push({ name: file.name, student: studentKey, courseName, sessions: addedAiSessionCount, skipped });
+      }
+      state.entries.push(...normalized);
+      if (normalized.length || rawAiSessions.length) upsertStudent(studentKey, studentMeta, courseName);
+      state.selectionMode = "all";
+      state.selectedKeys.clear();
+      return { entries: normalized.length, sessions: addedAiSessionCount, skipped, ignoredPluginArtifacts };
+    }
+
+    function courseNameForFile(file, courseName) {
+      const typed = String(courseName || "").trim();
+      if (typed && typed !== "未命名课程") return typed;
+      return courseHintFromRelativePath(relativePathOf(file)) || "未命名课程";
+    }
+
+    function isUsableClassName(student) {
+      const className = String(student.className || "").trim();
+      return Boolean(className) && !/^[0-9]+$/.test(className) && className !== student.name;
+    }
+
+    // 个别学生把班级填成“1”或自己的名字，这里只在同一次课里用多数同学的班级值补一下。
+    function repairClassNames() {
+      const perCourse = new Map();
+      for (const student of state.students) {
+        if (!isUsableClassName(student)) continue;
+        for (const course of student.courses || []) {
+          if (!perCourse.has(course)) perCourse.set(course, new Map());
+          const counts = perCourse.get(course);
+          counts.set(student.className, (counts.get(student.className) || 0) + 1);
+        }
+      }
+      const majority = new Map();
+      for (const [course, counts] of perCourse) {
+        let bestName = "";
+        let bestCount = 0;
+        for (const [className, count] of counts) {
+          if (count > bestCount) { bestName = className; bestCount = count; }
+        }
+        majority.set(course, bestName);
+      }
+      for (const student of state.students) {
+        if (isUsableClassName(student)) continue;
+        for (const course of student.courses || []) {
+          const fallback = majority.get(course);
+          if (fallback) { student.className = fallback; break; }
+        }
+      }
+    }
+
+    // 整班导入的日志文件已经按 isTraceFile 过滤过，这里沿用原有的“所选文件全部解析”行为。
+    async function handleFiles(fileList, courseName = "未命名课程") {
+      const files = Array.from(fileList || []);
+      if (!files.length) return;
+      $("importResult").textContent = "正在解析日志…";
+      state.importResultExpanded = false;
+      try {
+        for (const file of files) await parseFile(file, courseNameForFile(file, courseName));
+        repairClassNames();
+        state.eventPage = 0;
+        state.activeTab = "analysis";
+        renderAll();
+      } catch (error) {
+        $("importResult").innerHTML = `<span class="error">导入失败：${escapeHtml(error.message || error)}</span>`;
+      }
+    }
+
+    function loadCourseHistory() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(COURSE_HISTORY_KEY) || "[]");
+        state.courseHistory = Array.isArray(saved)
+          ? saved.filter((item) => typeof item === "string" && item.trim()).slice(0, 8)
+          : [];
+      } catch {
+        state.courseHistory = [];
+      }
+    }
+
+    function saveCourseHistory() {
+      try {
+        localStorage.setItem(COURSE_HISTORY_KEY, JSON.stringify(state.courseHistory));
+      } catch {
+        // The in-memory history still works when browser storage is unavailable.
+      }
+    }
+
+    function rememberCourseName(courseName) {
+      const name = String(courseName || "").trim();
+      if (!name || name === "未命名课程") return;
+      state.courseHistory = [name, ...state.courseHistory.filter((item) => item !== name)].slice(0, 8);
+      saveCourseHistory();
+    }
+
+    function renderCourseHistory() {
+      const container = $("courseHistory");
+      const list = $("courseHistoryList");
+      container.style.display = state.courseHistory.length ? "" : "none";
+      list.innerHTML = state.courseHistory.map((course, index) =>
+        `<button type="button" class="course-history-btn" data-course-index="${index}" title="${escapeHtml(course)}">${escapeHtml(course)}</button>`
+      ).join("");
+      list.querySelectorAll("[data-course-index]").forEach((button) => {
+        button.addEventListener("click", () => {
+          const course = state.courseHistory[Number(button.dataset.courseIndex)];
+          if (!course) return;
+          $("courseDialogInput").value = course;
+          $("courseDialogInput").focus();
+        });
+      });
+    }
+
+    function readEntryFile(entry) {
+      return new Promise((resolve) => entry.file((file) => resolve(file), () => resolve(null)));
+    }
+
+    function readDirectoryEntries(reader) {
+      return new Promise((resolve) => reader.readEntries((entries) => resolve(entries), () => resolve([])));
+    }
+
+    // 递归读取被拖进来的整个文件夹（DataTransferItem.webkitGetAsEntry）。
+    async function collectFilesFromEntries(entries, collected = []) {
+      for (const entry of entries || []) {
+        if (!entry) continue;
+        if (entry.isFile) {
+          const file = await readEntryFile(entry);
+          if (!file || !isTraceFile(file.name)) continue;
+          try {
+            Object.defineProperty(file, "webkitRelativePath", {
+              value: String(entry.fullPath || "").replace(/^\//, ""),
+              configurable: true
+            });
+          } catch {
+            // 拿不到文件夹路径时，仍然可以用日志内部的学生信息分人。
+          }
+          collected.push(file);
+        } else if (entry.isDirectory) {
+          const reader = entry.createReader();
+          let batch = [];
+          do {
+            batch = await readDirectoryEntries(reader);
+            if (batch.length) await collectFilesFromEntries(batch, collected);
+          } while (batch.length);
+        }
+      }
+      return collected;
+    }
+
+    function detectedCourseHints(files) {
+      const hints = [];
+      for (const file of files) {
+        const hint = courseHintFromRelativePath(relativePathOf(file));
+        if (hint && !hints.includes(hint)) hints.push(hint);
+      }
+      return hints;
+    }
+
+    function requestCourseImport(fileList) {
+      const files = Array.from(fileList || []);
+      if (!files.length) return;
+      state.pendingFiles = files;
+      const hints = detectedCourseHints(files);
+      $("courseDialogInput").value = hints.length === 1 ? hints[0] : "";
+      const hintBox = $("courseDialogHint");
+      if (hintBox) {
+        if (hints.length > 1) {
+          hintBox.textContent = `识别到多个班级：${hints.join("、")}。留空则按班级文件夹分别命名，填写则统一使用填写的名称。`;
+        } else if (hints.length === 1) {
+          hintBox.textContent = "已根据文件夹自动识别课程名称，可直接导入，也可以改成“第1次课 2026.9.23”这类名称。";
+        } else {
+          hintBox.textContent = "未识别到班级文件夹名称，留空将使用“未命名课程”。";
+        }
+      }
+      renderCourseHistory();
+      $("courseDialog").classList.add("open");
+      $("courseDialogInput").focus();
+    }
+
+    function finishCourseImport(skip) {
+      const files = state.pendingFiles;
+      state.pendingFiles = [];
+      const courseName = skip ? "未命名课程" : ($("courseDialogInput").value.trim() || "未命名课程");
+      if (!skip && courseName !== "未命名课程") rememberCourseName(courseName);
+      $("courseDialog").classList.remove("open");
+      $("fileInput").value = "";
+      $("folderInput").value = "";
+      handleFiles(files, courseName);
+    }
+
+    function clearData() {
+      state.files = [];
+      state.entries = [];
+      state.aiFiles = [];
+      state.aiSessions = [];
+      state.aiImportStats = { filteredSystemMessages: 0, mergedSnapshots: 0, pluginArtifactRecords: 0 };
+      state.importResultExpanded = false;
+      state.students = [];
+      state.selectedKeys.clear();
+      state.selectionMode = "all";
+      state.eventPage = 0;
+      state.eventSortKey = "timestamp";
+      state.eventSortDir = "desc";
+      state.filePage = 0;
+      state.fileSortKey = "editCount";
+      state.fileSortDir = "desc";
+      state.activeTab = "analysis";
+      state.operationView = "files";
+      state.unnamedCount = 0;
+      state.nextEntryId = 0;
+      state.nextAiSessionId = 0;
+      state.pendingFiles = [];
+      state.timeZoomIndex = 2;
+      state.openCourses.clear();
+      state.editStudentKey = null;
+      state.openAiSessionId = null;
+      state.aiChartType = null;
+      state.aiChartZoom = 1;
+      $("dateFromFilter").value = "";
+      $("dateToFilter").value = "";
+      renderAll();
+    }
+
+    function downloadBlob(blob, fileName) {
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = fileName;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    function csvCell(value) {
+      return `"${String(value ?? "").replaceAll('"', '""')}"`;
+    }
+
+    function eventsToCsv(events) {
+      const rows = [["学生", "课程", "时间", "文件", "文件类型", "扩展名", "操作类型", "插入字符", "删除字符", "文本预览"]];
+      for (const entry of events) {
+        if (entry.eventType.startsWith("file.")) {
+          rows.push([entry.student, entry.course || "未命名课程", formatDate(entry.timestamp), entry.file, entry.fileType, entry.extension || "", operationLabel(entry.eventType), 0, 0, previewText(entry, 500)]);
+        } else if (!entry.changes.length) {
+          rows.push([entry.student, entry.course || "未命名课程", formatDate(entry.timestamp), entry.file, entry.fileType, entry.extension || "", "无改动", 0, 0, ""]);
+        } else {
+          for (const change of entry.changes) {
+            const inserted = change.operation === "delete" ? 0 : change.text.length;
+            const deleted = change.operation === "insert" ? 0 : (change.removedText || change.text).length;
+            rows.push([entry.student, entry.course || "未命名课程", formatDate(entry.timestamp), entry.file, entry.fileType, entry.extension || "", operationLabel(change.operation), inserted, deleted, change.text || change.removedText || ""]);
+          }
+        }
+      }
+      return `\uFEFF${rows.map((row) => row.map(csvCell).join(",")).join("\r\n")}`;
+    }
+
+    function summaryToCsv(events) {
+      const rows = [["学生", "课程", "班级", "学号", "编辑事件数", "文件操作数", "文件数", "插入字符", "删除字符", "首次修改时间", "最后修改时间"]];
+      for (const item of studentSummaries(events)) {
+        rows.push([item.name, item.courseNames || "", item.className, item.studentId, item.editEvents, item.fileOps, item.fileCount, item.insertedChars, item.deletedChars, formatDate(item.firstTime), formatDate(item.lastTime)]);
+      }
+      return `\uFEFF${rows.map((row) => row.map(csvCell).join(",")).join("\r\n")}`;
+    }
+
+    function studentFilesToCsv(files) {
+      const rows = [["文件路径", "类型", "编辑次数", "文件操作", "插入字符", "删除字符", "最后修改时间"]];
+      for (const item of files) {
+        rows.push([
+          item.file,
+          item.fileType,
+          item.editCount,
+          item.fileOpCount,
+          item.insertedChars,
+          item.deletedChars,
+          formatDate(item.lastTime)
+        ]);
+      }
+      return `\uFEFF${rows.map((row) => row.map(csvCell).join(",")).join("\r\n")}`;
+    }
+
+    function studentTimelineToCsv(events) {
+      const rows = [["时间", "操作类型", "文件", "内容预览"]];
+      for (const entry of events) {
+        const operation = entry.eventType === "edit"
+          ? (entry.changes.map((change) => operationLabel(change.operation)).join(" / ") || "无改动")
+          : operationLabel(entry.eventType);
+        rows.push([
+          formatDate(entry.timestamp),
+          operation,
+          entry.file,
+          previewText(entry, 500)
+        ]);
+      }
+      return `\uFEFF${rows.map((row) => row.map(csvCell).join(",")).join("\r\n")}`;
+    }
+
+    function aiSessionsToCsv(sessions) {
+      const rows = [["学生", "课程", "班级", "学号", "会话ID", "会话标题", "模型", "Provider", "首次提问时间", "时间可信", "消息序号", "轮次", "角色", "类型", "内容", "工具名称", "工具参数摘要", "工具结果", "是否错误", "提问数", "AI回复数", "工具调用数", "Token输入", "Token输出", "总成本"]];
+      for (const session of sessions) {
+        const student = studentFor(session.student);
+        let round = 0;
+        session.messages.forEach((message, messageIndex) => {
+          let type = "未知消息";
+          let content = "";
+          let toolName = "";
+          let inputSummary = "";
+          let resultPreview = "";
+          let isError = "";
+
+          if (message.type === "text") {
+            if (message.role === "user") {
+              round += 1;
+              type = "学生提问";
+            } else {
+              type = "AI 回答";
+            }
+            content = message.text;
+          } else if (message.type === "tool_use") {
+            type = "工具调用";
+            toolName = message.tool || "";
+            inputSummary = message.inputSummary || "";
+            resultPreview = message.resultPreview || "";
+            isError = message.isError === undefined ? "" : (message.isError ? "是" : "否");
+          } else if (message.type === "tool_result") {
+            type = "工具结果";
+            toolName = message.tool || "";
+            resultPreview = message.resultPreview || "";
+            isError = message.isError ? "是" : "否";
+          }
+
+          rows.push([
+            student?.name || session.student,
+            session.course || "",
+            student?.className || "",
+            student?.studentId || "",
+            session.sessionId || "",
+            session.title || "",
+            session.model || "",
+            session.provider || "",
+            formatDate(session.firstQuestionAt || session.startedAt || session.timestamp),
+            session.timeTrusted ? "是" : "否",
+            messageIndex + 1,
+            round || 0,
+            message.role || "",
+            type,
+            content,
+            toolName,
+            inputSummary,
+            resultPreview,
+            isError,
+            session.questions || 0,
+            session.replies || 0,
+            session.toolCalls || 0,
+            session.tokens?.input || 0,
+            session.tokens?.output || 0,
+            formatCost(session.tokens?.totalCost)
+          ]);
+        });
+      }
+      return `\uFEFF${rows.map((row) => row.map(csvCell).join(",")).join("\r\n")}`;
+    }
+
+    function aiSummaryToCsv(sessions) {
+      const rows = [["学生", "课程", "班级", "学号", "会话数", "提问数", "AI回复数", "工具调用数", "Token输入", "Token输出", "总成本"]];
+      for (const item of aiStudentSummaries(sessions)) {
+        rows.push([
+          item.name,
+          item.courseNames || "",
+          item.className || "",
+          item.studentId || "",
+          item.sessions,
+          item.questions,
+          item.replies,
+          item.toolCalls,
+          item.tokensIn,
+          item.tokensOut,
+          formatCost(item.cost)
+        ]);
+      }
+      return `\uFEFF${rows.map((row) => row.map(csvCell).join(",")).join("\r\n")}`;
+    }
+
+    function compareCoverageToCsv(summaries) {
+      const rows = [["姓名", "课程", "班级 / 学号", "编辑事件", "文件操作", "文件数", "插入字符", "删除字符", "最后修改时间"]];
+      for (const item of summaries) {
+        rows.push([
+          item.name,
+          item.courseNames || item.course || "",
+          [item.className, item.studentId].filter(Boolean).join(" / "),
+          item.editEvents,
+          item.fileOps,
+          item.fileCount,
+          item.insertedChars,
+          item.deletedChars,
+          formatDate(item.lastTime)
+        ]);
+      }
+      return `\uFEFF${rows.map((row) => row.map(csvCell).join(",")).join("\r\n")}`;
+    }
+
+    function compareOperationsToCsv(selectedStudents, events) {
+      const rows = [["姓名", "插入", "删除", "替换", "文件新建", "文件删除", "文件重命名", "文件移动"]];
+      for (const student of selectedStudents) {
+        const counts = { insert: 0, delete: 0, replace: 0, "file.create": 0, "file.delete": 0, "file.rename": 0, "file.move": 0 };
+        for (const entry of events) {
+          if (entry.student !== student.key) continue;
+          if (entry.eventType === "edit") {
+            for (const change of entry.changes) counts[change.operation] = (counts[change.operation] || 0) + 1;
+          } else if (counts[entry.eventType] !== undefined) {
+            counts[entry.eventType] += 1;
+          }
+        }
+        rows.push([
+          student.name,
+          counts.insert,
+          counts.delete,
+          counts.replace,
+          counts["file.create"],
+          counts["file.delete"],
+          counts["file.rename"],
+          counts["file.move"]
+        ]);
+      }
+      return `\uFEFF${rows.map((row) => row.map(csvCell).join(",")).join("\r\n")}`;
+    }
+
+    function chartDataFor(key, events) {
+      if (key === "detail-hours") return timeBinsFor(events, 60);
+      if (key === "hours") return timeBinsFor(events, currentTimeBinMinutes());
+      if (key === "operations" || key === "detail-operations") return operationDistribution(events);
+      if (key === "fileTypes" || key === "detail-fileTypes") return fileTypeDistribution(events);
+      if (key === "compare-chars") {
+        const map = new Map();
+        for (const student of state.students) map.set(student.key, { label: student.name, value: 0 });
+        for (const entry of events) {
+          if (entry.eventType !== "edit") continue;
+          const item = map.get(entry.student);
+          if (item) item.value += entry.insertedChars + entry.deletedChars;
+        }
+        return Array.from(map.values()).sort((a, b) => b.value - a.value);
+      }
+      return studentEditDistribution(events);
+    }
+
+    function chartDetailTable(items) {
+      if (!items.length) return `<div class="empty">暂无数据</div>`;
+      return `<table><thead><tr><th>类别</th><th class="numeric">数量</th></tr></thead><tbody>${items.map((item) => `<tr><td>${escapeHtml(item.label)}</td><td class="numeric">${Number(item.value || 0).toLocaleString("zh-CN")}</td></tr>`).join("")}</tbody></table>`;
+    }
+
+    function chartContentFor(key, events) {
+      const titles = {
+        students: "学生编辑次数对比",
+        "compare-events": "学生编辑事件数",
+        "compare-chars": "学生插入与删除字符合计",
+        hours: "修改时间分布",
+        "detail-hours": "修改时间分布",
+        operations: "操作类型分布",
+        "detail-operations": "操作类型分布",
+        fileTypes: "文件类型分布",
+        "detail-fileTypes": "文件类型分布"
+      };
+      const title = titles[key] || "图表详情";
+      const data = chartDataFor(key, events);
+      let chart;
+      if (key.includes("operations")) chart = chartDonut(data);
+      else if (key.includes("fileTypes")) chart = data.length ? chartHBar(data, { title }) : emptyChart();
+      else chart = data.length ? chartBar(data, { title }) : emptyChart();
+      return { title, chart, table: chartDetailTable(data) };
+    }
+
+    function buildTimeChartStandalonePage(events) {
+      const payload = events.map((entry) => ({
+        student: entry.student,
+        course: entry.course,
+        timestamp: entry.timestamp ? entry.timestamp.toISOString() : null,
+        file: entry.file,
+        eventType: entry.eventType,
+        changes: entry.changes.map((change) => ({
+          operation: change.operation,
+          text: change.text,
+          removedText: change.removedText
+        }))
+      }));
+      return `<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>修改时间分布 - 教师可视化面板</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 28px; color: #17202a; background: #f4f6f8; font-family: "Segoe UI", "Microsoft YaHei", sans-serif; letter-spacing: 0; }
+  .detail { max-width: 1100px; margin: 0 auto; }
+  h1 { margin: 0 0 6px; font-size: 24px; }
+  .subtitle { margin: 0 0 18px; color: #667085; }
+  .panel { padding: 20px; border: 1px solid #d9e1ea; border-radius: 8px; background: #fff; }
+  .toolbar { display: flex; align-items: center; justify-content: flex-end; gap: 6px; margin-bottom: 10px; }
+  button { min-height: 32px; padding: 0 10px; border: 1px solid #d9e1ea; border-radius: 5px; color: #17202a; background: #fff; font-weight: 650; }
+  .chart-box { min-height: 330px; }
+  .svg-chart { display: block; width: 100%; height: 330px; }
+  .time-detail { margin-top: 12px; padding-top: 12px; border-top: 1px solid #d9e1ea; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { padding: 9px 10px; border-bottom: 1px solid #edf1f5; text-align: left; }
+  th { color: #475467; background: #f8fafc; }
+  .numeric { text-align: right; }
+</style>
+</head>
+<body>
+<div class="detail">
+  <h1>修改时间分布</h1>
+  <p class="subtitle">当前范围 ${events.length} 条事件；生成时间：${formatDate(new Date())}</p>
+  <section class="panel" id="standaloneTime"></section>
+</div>
+<script>
+  const EVENTS = ${safeEmbed(payload)};
+  const ZOOMS = [1, 5, 15, 30, 60, 120];
+  let zoomIndex = 2;
+  const LABELS = { insert: "插入", delete: "删除", replace: "替换", "file.create": "文件新建", "file.delete": "文件删除", "file.rename": "文件重命名", "file.move": "文件移动" };
+  const COLORS = ["#2563eb", "#16a34a", "#d97706", "#dc2626", "#0f766e", "#7c3aed", "#0891b2", "#be123c", "#4d7c0f", "#4338ca"];
+  function label(operation) { return LABELS[operation] || operation || "未知操作"; }
+  function pad(n) { return String(n).padStart(2, "0"); }
+  function fmt(date) { return date ? date.getFullYear() + "-" + pad(date.getMonth() + 1) + "-" + pad(date.getDate()) + " " + pad(date.getHours()) + ":" + pad(date.getMinutes()) + ":" + pad(date.getSeconds()) : "--"; }
+  function timeLabel(date) { return pad(date.getHours()) + ":" + pad(date.getMinutes()); }
+  function bins() {
+    const dated = EVENTS.filter((entry) => entry.timestamp).map((entry) => ({ ...entry, date: new Date(entry.timestamp) }));
+    if (!dated.length) return [];
+    const step = ZOOMS[zoomIndex] * 60 * 1000;
+    const minTime = Math.min(...dated.map((entry) => entry.date.getTime()));
+    const maxTime = Math.max(...dated.map((entry) => entry.date.getTime()));
+    const first = Math.floor(minTime / step) * step;
+    const count = Math.floor((maxTime - first) / step) + 1;
+    const list = Array.from({ length: count }, (_, index) => ({ key: first + index * step, start: new Date(first + index * step), value: 0, events: [] }));
+    for (const entry of dated) {
+      const index = Math.floor((entry.date.getTime() - first) / step);
+      if (index >= 0 && index < list.length) {
+        list[index].value += 1;
+        list[index].events.push(entry);
+      }
+    }
+    return list.filter((item) => item.value > 0);
+  }
+  function chart(items) {
+    const max = Math.max(1, ...items.map((item) => item.value));
+    const width = 1000;
+    const height = 300;
+    const left = 56;
+    const right = 18;
+    const top = 16;
+    const bottom = 52;
+    const plotWidth = width - left - right;
+    const plotHeight = height - top - bottom;
+    const slot = plotWidth / items.length;
+    const barWidth = Math.max(4, Math.min(58, slot * 0.72));
+    const labelEvery = Math.max(1, Math.ceil(items.length / 14));
+    const bars = items.map((item, index) => {
+      const x = left + slot * index + (slot - barWidth) / 2;
+      const h = Math.max(3, item.value / max * plotHeight);
+      const y = top + plotHeight - h;
+      return '<g class="bar" data-key="' + item.key + '" style="cursor:pointer"><rect x="' + x + '" y="' + y + '" width="' + barWidth + '" height="' + h + '" rx="2" fill="#2563eb"></rect><text x="' + (x + barWidth / 2) + '" y="' + (y - 7) + '" font-size="13" fill="#475467" text-anchor="middle">' + item.value + '</text>' + (index % labelEvery === 0 ? '<text x="' + (x + barWidth / 2) + '" y="' + (height - 24) + '" font-size="12" fill="#667085" text-anchor="middle" transform="rotate(-32 ' + (x + barWidth / 2) + ' ' + (height - 24) + ')">' + timeLabel(item.start) + '</text>' : '') + '</g>';
+    }).join("");
+    return '<svg class="svg-chart" viewBox="0 0 ' + width + ' ' + height + '"><line x1="' + left + '" y1="' + (top + plotHeight) + '" x2="' + (width - right) + '" y2="' + (top + plotHeight) + '" stroke="#d9e1ea"></line><line x1="' + left + '" y1="' + top + '" x2="' + left + '" y2="' + (top + plotHeight) + '" stroke="#d9e1ea"></line>' + bars + '</svg>';
+  }
+  function detailFor(bin) {
+    if (!bin) return '<div class="time-detail">请点击一个时间柱查看明细。</div>';
+    const map = new Map();
+    for (const entry of bin.events) {
+      if (!map.has(entry.student)) map.set(entry.student, { student: entry.student, operations: new Map() });
+      const item = map.get(entry.student);
+      if (entry.eventType === "edit") {
+        if (!entry.changes.length) item.operations.set("无改动", (item.operations.get("无改动") || 0) + 1);
+        else for (const change of entry.changes) item.operations.set(label(change.operation), (item.operations.get(label(change.operation)) || 0) + 1);
+      } else {
+        item.operations.set(label(entry.eventType), (item.operations.get(label(entry.eventType)) || 0) + 1);
+      }
+    }
+    const rows = Array.from(map.values()).flatMap((item) => Array.from(item.operations.entries()).map(([operation, count]) => '<tr><td>' + item.student + '</td><td>' + operation + '</td><td class="numeric">' + count + '</td></tr>')).join("");
+    return '<div class="time-detail"><strong>' + fmt(bin.start) + '：共 ' + bin.value + ' 次操作</strong><table><thead><tr><th>学生</th><th>操作类型</th><th class="numeric">操作次数</th></tr></thead><tbody>' + (rows || '<tr><td colspan="3">暂无明细</td></tr>') + '</tbody></table></div>';
+  }
+  function render() {
+    const list = bins();
+    const root = document.getElementById("standaloneTime");
+    const zoomOutDisabled = zoomIndex >= ZOOMS.length - 1;
+    const zoomInDisabled = zoomIndex <= 0;
+    root.innerHTML = '<div class="toolbar"><button data-zoom="in" ' + (zoomInDisabled ? 'disabled' : '') + '>放大</button><button data-zoom="out" ' + (zoomOutDisabled ? 'disabled' : '') + '>缩小</button><span>当前粒度：' + ZOOMS[zoomIndex] + ' 分钟</span></div><div class="chart-box">' + chart(list) + '</div><div id="detail">' + detailFor(null) + '</div>';
+    root.querySelectorAll("[data-zoom]").forEach((button) => button.addEventListener("click", () => {
+      if (button.dataset.zoom === "in" && zoomIndex > 0) zoomIndex -= 1;
+      if (button.dataset.zoom === "out" && zoomIndex < ZOOMS.length - 1) zoomIndex += 1;
+      render();
+    }));
+    root.querySelectorAll(".bar").forEach((bar) => bar.addEventListener("click", () => {
+      const item = list.find((bin) => String(bin.key) === bar.dataset.key);
+      document.getElementById("detail").innerHTML = detailFor(item);
+    }));
+  }
+  render();
+<\/script>
+<\/body>
+<\/html>`;
+    }
+
+    function buildChartDetailPage(key, events) {
+      if (key === "hours" || key === "detail-hours") return buildTimeChartStandalonePage(events);
+      const content = chartContentFor(key, events);
+      return `<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>${escapeHtml(content.title)} - 教师可视化面板</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 28px; color: #17202a; background: #f4f6f8; font-family: "Segoe UI", "Microsoft YaHei", sans-serif; letter-spacing: 0; }
+  .detail { max-width: 1000px; margin: 0 auto; }
+  h1 { margin: 0 0 6px; font-size: 24px; }
+  .subtitle { margin: 0 0 18px; color: #667085; }
+  .chart-panel { padding: 20px; border: 1px solid #d9e1ea; border-radius: 8px; background: #fff; }
+  .chart-large { min-height: 380px; }
+  .svg-chart { display: block; width: 100%; height: 380px; }
+  .table-panel { margin-top: 16px; padding: 18px; border: 1px solid #d9e1ea; border-radius: 8px; background: #fff; }
+  h2 { margin: 0 0 12px; font-size: 17px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { padding: 9px 10px; border-bottom: 1px solid #edf1f5; text-align: left; }
+  th { color: #475467; background: #f8fafc; }
+  .numeric { text-align: right; font-variant-numeric: tabular-nums; }
+  .empty { padding: 24px; color: #667085; text-align: center; }
+</style>
+</head>
+<body>
+<div class="detail">
+  <h1>${escapeHtml(content.title)}</h1>
+  <p class="subtitle">当前范围 ${events.length} 条事件；生成时间：${formatDate(new Date())}</p>
+  <section class="chart-panel"><div class="chart-large">${content.chart}</div></section>
+  <section class="table-panel"><h2>数据明细</h2>${content.table}</section>
+</div>
+<\/body>
+<\/html>`;
+    }
+
+    function openChartModal(key) {
+      const events = currentEvents();
+      state.currentChartKey = key;
+      if (key === "hours" || key === "detail-hours") {
+        $("chartDialogTitle").textContent = "修改时间分布";
+        $("chartDialogContent").innerHTML = `<p class="note">当前范围 ${events.length} 条事件；生成时间：${formatDate(new Date())}</p>${timeChartCard(events)}`;
+        $("chartDialog").classList.add("open");
+        return;
+      }
+      const content = chartContentFor(key, events);
+      $("chartDialogTitle").textContent = content.title;
+      $("chartDialogContent").innerHTML = `<p class="note">当前范围 ${events.length} 条事件；生成时间：${formatDate(new Date())}</p><div class="chart-large">${content.chart}</div><div class="time-detail"><h2>数据明细</h2>${content.table}</div>`;
+      $("chartDialog").classList.add("open");
+    }
+
+    function closeChartModal() {
+      $("chartDialog").classList.remove("open");
+    }
+
+    function refreshChartModal() {
+      const events = currentEvents();
+      if (state.currentChartKey === "hours" || state.currentChartKey === "detail-hours") {
+        $("chartDialogTitle").textContent = "修改时间分布";
+        $("chartDialogContent").innerHTML = `<p class="note">当前范围 ${events.length} 条事件；生成时间：${formatDate(new Date())}</p>${timeChartCard(events)}`;
+      }
+    }
+
+    function openChartWindow(key = state.currentChartKey) {
+      if (!key) return;
+      const events = currentEvents();
+      const win = window.open("", "_blank");
+      if (!win) {
+        showMessage("弹窗被拦截", "浏览器拦截了新窗口，请允许本页面打开弹窗后重试。");
+        return;
+      }
+      win.document.open();
+      win.document.write(buildChartDetailPage(key, events));
+      win.document.close();
+    }
+
+    function showMessage(title, text) {
+      $("messageTitle").textContent = title;
+      $("messageText").textContent = text;
+      $("messageDialog").classList.add("open");
+      $("messageOkBtn").focus();
+    }
+
+    function closeMessage() {
+      $("messageDialog").classList.remove("open");
+    }
+
+    function switchTab(tab) {
+      state.activeTab = tab;
+      state.eventPage = 0;
+      updateView();
+    }
+
+    function switchOperationView(view) {
+      state.operationView = view;
+      state.eventPage = 0;
+      state.filePage = 0;
+      updateView();
+    }
+
+    function findEntryById(id) {
+      return state.entries.find((entry) => entry.id === Number(id));
+    }
+
+    function openPreview(id) {
+      const entry = findEntryById(id);
+      if (!entry) return;
+      $("previewDialogMeta").textContent = `${entry.student} / ${entry.file} / ${formatDate(entry.timestamp)}`;
+      $("previewDialogContent").textContent = previewText(entry, Number.MAX_SAFE_INTEGER);
+      $("previewDialog").classList.add("open");
+    }
+
+    function closePreview() {
+      $("previewDialog").classList.remove("open");
+    }
+
+    function buildAiReportSections(aiSessions) {
+      if (!aiSessions.length) return "";
+      const totals = aiTotals(aiSessions);
+      const summaries = aiStudentSummaries(aiSessions);
+      const summaryRows = summaries.map((item) => `<tr><td>${escapeHtml(item.name)}</td><td>${escapeHtml(item.courseNames)}</td><td>${escapeHtml([item.className, item.studentId].filter(Boolean).join(" / ") || "--")}</td><td class="numeric">${item.sessions}</td><td class="numeric">${item.questions}</td><td class="numeric">${item.replies}</td><td class="numeric">${item.toolCalls}</td><td class="numeric">${aiNumberCell(item.tokensIn)}</td><td class="numeric">${aiNumberCell(item.tokensOut)}</td><td class="numeric">${formatCost(item.cost)}</td></tr>`).join("");
+      const sessionHtml = aiSessions.map((session) => {
+        const student = studentFor(session.student);
+        const firstQuestionTime = session.firstQuestionAt || session.startedAt || session.timestamp;
+        return `<div class="ai-session-summary">
+          <h3>${escapeHtml(session.title || "(无标题)")}</h3>
+          <p>学生：${escapeHtml(student?.name || session.student)} / 模型：${escapeHtml(session.model || "--")} / Provider：${escapeHtml(session.provider || "--")} / 首次提问：${formatDate(firstQuestionTime)}${session.timeTrusted ? "" : "（时间未校准）"}</p>
+          <p>提问 ${session.questions} 次 / AI 回复 ${session.replies} 次 / 工具调用 ${session.toolCalls} 次 / 成本 ${formatCost(session.tokens?.totalCost)}</p>
+          ${session.prompt ? `<div class="ai-prompt"><strong>初始提示词</strong>\n${escapeHtml(session.prompt)}</div>` : ""}
+          ${session.messages.map(aiMessageHtml).join("")}
+        </div>`;
+      }).join("");
+      return `<section><h2>AI 问答汇总</h2>
+        <div class="stats" style="grid-template-columns:repeat(7, 1fr);">
+          <div class="stat"><div class="stat-label">AI 会话</div><div class="stat-value">${totals.sessions}</div></div>
+          <div class="stat"><div class="stat-label">提问数</div><div class="stat-value">${totals.questions}</div></div>
+          <div class="stat"><div class="stat-label">AI 回复</div><div class="stat-value">${totals.replies}</div></div>
+          <div class="stat"><div class="stat-label">工具调用</div><div class="stat-value">${totals.toolCalls}</div></div>
+          <div class="stat"><div class="stat-label">Token 输入</div><div class="stat-value">${totals.tokensIn}</div></div>
+          <div class="stat"><div class="stat-label">Token 输出</div><div class="stat-value">${totals.tokensOut}</div></div>
+          <div class="stat"><div class="stat-label">总成本</div><div class="stat-value">${formatCost(totals.cost)}</div></div>
+        </div>
+        <div class="charts">
+          <div class="chart"><h3>学生提问数量对比</h3>${summaries.length ? chartBar(summaries.map((item) => ({ label: item.name, value: item.questions })), { title: "学生提问数量对比" }) : emptyChart()}</div>
+          <div class="chart"><h3>学生 Token 输入 / 输出对比</h3>${summaries.length ? aiTokenGroupedChart(summaries.map((item) => ({ label: item.name, input: item.tokensIn, output: item.tokensOut })), { title: "学生 Token 输入 / 输出对比" }) : emptyChart()}</div>
+        </div>
+      </section>
+      <section><h2>AI 学生对比</h2><table><thead><tr><th>姓名</th><th>课程</th><th>班级 / 学号</th><th class="numeric">会话数</th><th class="numeric">提问数</th><th class="numeric">回复数</th><th class="numeric">工具调用</th><th class="numeric">Token 输入</th><th class="numeric">Token 输出</th><th class="numeric">总成本</th></tr></thead><tbody>${summaryRows}</tbody></table></section>
+      <section><h2>AI 会话原文与工具调用记录</h2>${sessionHtml}</section>`;
+    }
+
+    function buildReportHtml(events, aiSessions = []) {
+      const totals = statTotals(events);
+      const summaries = studentSummaries(events);
+      const files = uniqueFiles(events);
+      const students = studentEditDistribution(events);
+      const hours = timeBinsFor(events, 60);
+      const operations = operationDistribution(events);
+      const fileTypes = fileTypeDistribution(events);
+      const untrustedTimeCount =
+        events.filter((entry) => !entry.timeTrusted).length +
+        aiSessions.filter((session) => !session.timeTrusted).length;
+      const timeWarning = untrustedTimeCount
+        ? `<div class="time-warning">有 ${untrustedTimeCount} 条记录未获得可信时间，时间数据可能受学生机系统时间影响。</div>`
+        : "";
+      const summaryRows = summaries.map((item) => `<tr><td>${escapeHtml(item.name)}</td><td>${escapeHtml(item.courseNames || item.course || "--")}</td><td>${escapeHtml([item.className, item.studentId].filter(Boolean).join(" / ") || "--")}</td><td>${item.editEvents}</td><td>${item.fileOps}</td><td>${item.fileCount}</td><td>${item.insertedChars}</td><td>${item.deletedChars}</td><td>${formatDate(item.lastTime)}</td></tr>`).join("");
+      const fileRows = files.map((item) => `<tr><td>${escapeHtml(item.student)}</td><td>${escapeHtml(item.course || "--")}</td><td>${escapeHtml(item.file)}</td><td>${escapeHtml(item.fileType)}</td><td>${escapeHtml(item.extension || "--")}</td><td>${item.editCount}</td><td>${item.fileOpCount}</td><td>${item.insertedChars}</td><td>${item.deletedChars}</td><td>${formatDate(item.lastTime)}</td></tr>`).join("");
+      const codeSection = events.length ? `<div class="stats">
+        <div class="stat"><div class="stat-label">学生人数</div><div class="stat-value">${totals.students}</div></div>
+        <div class="stat"><div class="stat-label">总编辑事件</div><div class="stat-value" style="color:#2563eb">${totals.editEvents}</div></div>
+        <div class="stat"><div class="stat-label">文件数</div><div class="stat-value">${totals.files}</div></div>
+        <div class="stat"><div class="stat-label">插入字符</div><div class="stat-value" style="color:#16a34a">${totals.insertedChars}</div></div>
+        <div class="stat"><div class="stat-label">删除字符</div><div class="stat-value">${totals.deletedChars}</div></div>
+      </div>
+      <section><h2>图表</h2><div class="charts">
+        <div class="chart"><h3>学生编辑次数对比</h3>${students.length ? chartBar(students) : emptyChart()}</div>
+        <div class="chart"><h3>修改时间分布</h3>${chartBar(hours)}</div>
+        <div class="chart"><h3>操作类型分布</h3>${chartDonut(operations)}</div>
+        <div class="chart"><h3>文件类型分布</h3>${fileTypes.length ? chartHBar(fileTypes) : emptyChart()}</div>
+      </div></section>
+      <section><h2>学生汇总</h2><table><thead><tr><th>姓名</th><th>课程</th><th>班级 / 学号</th><th>编辑事件</th><th>文件操作</th><th>文件数</th><th>插入字符</th><th>删除字符</th><th>最后修改</th></tr></thead><tbody>${summaryRows}</tbody></table></section>
+      <section><h2>文件明细</h2><table><thead><tr><th>学生</th><th>课程</th><th>文件路径</th><th>类型</th><th>扩展名</th><th>编辑次数</th><th>文件操作</th><th>插入字符</th><th>删除字符</th><th>最后修改</th></tr></thead><tbody>${fileRows}</tbody></table></section>` : "";
+      const aiSection = buildAiReportSections(aiSessions);
+      return `<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Code Edit Trace 可视化报告</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 24px; color: #17202a; background: #f4f6f8; font-family: "Segoe UI", "Microsoft YaHei", sans-serif; letter-spacing: 0; }
+  .report { max-width: 1100px; margin: 0 auto; }
+  h1 { margin: 0 0 6px; font-size: 26px; }
+  .subtitle { margin: 0 0 20px; color: #667085; }
+  .stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 16px; }
+  .stat { padding: 14px; border: 1px solid #d9e1ea; border-radius: 8px; background: #fff; }
+  .stat-label { color: #667085; font-size: 12px; }
+  .stat-value { margin-top: 7px; font-size: 24px; font-weight: 750; }
+  section { margin-bottom: 16px; padding: 16px; border: 1px solid #d9e1ea; border-radius: 8px; background: #fff; }
+  h2 { margin: 0 0 12px; font-size: 17px; }
+  .charts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+  .chart { min-width: 0; }
+  .chart h3 { margin: 0 0 8px; font-size: 14px; }
+  .svg-chart { display: block; width: 100%; height: 220px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { padding: 8px 9px; border-bottom: 1px solid #edf1f5; text-align: left; vertical-align: top; }
+  th { color: #475467; background: #f8fafc; }
+  .numeric { text-align: right; }
+  .badge { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 700; }
+  .insert { color: #166534; background: #e8f7ee; }
+  .delete { color: #991b1b; background: #feeceb; }
+  .replace { color: #92400e; background: #fff5e6; }
+  .file { color: #1e40af; background: #eaf1ff; }
+  .preview { white-space: pre-wrap; word-break: break-all; }
+  .time-warning { margin: 0 0 14px; padding: 10px 12px; border: 1px solid #f4c76a; border-radius: 6px; color: #92400e; background: #fff5e6; }
+  .ai-session-summary { margin-bottom: 16px; padding: 12px; border: 1px solid #d9e1ea; border-radius: 6px; background: #fbfcfe; }
+  .ai-session-summary h3 { margin: 0 0 8px; font-size: 16px; }
+  .ai-session-summary p { margin: 0 0 6px; color: #475467; }
+  .ai-prompt { margin: 10px 0; padding: 10px; border-left: 3px solid #2563eb; background: #fff; white-space: pre-wrap; word-break: break-all; }
+  .ai-message { margin: 8px 0; padding: 10px; border: 1px solid #d9e1ea; border-radius: 6px; background: #fff; }
+  .ai-role-badge { display: inline-block; margin-bottom: 6px; padding: 2px 7px; border-radius: 4px; font-size: 12px; font-weight: 700; }
+  .ai-role-badge.user { color: #1e40af; background: #eaf1ff; }
+  .ai-role-badge.assistant { color: #166534; background: #e8f7ee; }
+  .ai-role-badge.tool { color: #92400e; background: #fff5e6; }
+  .ai-message-text { white-space: pre-wrap; word-break: break-all; line-height: 1.55; }
+  .ai-tool-name { font-family: Consolas, monospace; font-weight: 700; word-break: break-all; }
+  .ai-tool-block { margin-top: 6px; overflow-wrap: anywhere; color: #475467; font-family: Consolas, monospace; font-size: 12px; white-space: pre-wrap; }
+  .ai-number { white-space: nowrap; font-variant-numeric: tabular-nums; }
+  @media (max-width: 760px) { .stats, .charts { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="report">
+  <h1>Code Edit Trace 可视化报告</h1>
+  <p class="subtitle">生成时间：${formatDate(new Date())}；当前范围 ${events.length} 条事件 / ${aiSessions.length} 条 AI 会话</p>
+  ${timeWarning}
+  ${codeSection}
+  ${aiSection}
+</div>
+<\/body>
+<\/html>`;
+    }
+
+    function exportReport() {
+      downloadBlob(new Blob([buildReportHtml(currentEvents(), currentAiSessions())], { type: "text/html;charset=utf-8" }), "code-edit-report.html");
+    }
+
+    function openExportDialog() {
+      $("exportDialog").classList.add("open");
+    }
+
+    function closeExportDialog() {
+      $("exportDialog").classList.remove("open");
+    }
+
+    function exportReportPdf() {
+      const events = currentEvents();
+      const aiSessions = currentAiSessions();
+      const win = window.open("", "_blank");
+      if (!win) {
+        showMessage("弹窗被拦截", "浏览器拦截了新窗口，请允许本页面打开弹窗后重试。");
+        return;
+      }
+      win.document.open();
+      win.document.write(buildReportHtml(events, aiSessions));
+      win.document.close();
+      setTimeout(() => win.print(), 250);
+    }
+
+    function exportEventsCsv() {
+      downloadBlob(new Blob([eventsToCsv(currentEvents())], { type: "text/csv;charset=utf-8" }), "code-edit-events.csv");
+    }
+
+    function exportFilteredFilesCsv() {
+      const rows = [["学生", "课程", "文件路径", "文件类型", "编辑次数", "文件操作", "插入字符", "删除字符", "最后修改时间"]];
+      for (const item of uniqueFiles(currentEvents())) {
+        rows.push([
+          item.student,
+          item.course || "",
+          item.file,
+          item.fileType,
+          item.editCount,
+          item.fileOpCount,
+          item.insertedChars,
+          item.deletedChars,
+          formatDate(item.lastTime)
+        ]);
+      }
+      downloadBlob(new Blob([`\uFEFF${rows.map((row) => row.map(csvCell).join(",")).join("\r\n")}`], { type: "text/csv;charset=utf-8" }), "code-edit-filtered-files.csv");
+    }
+
+    function exportSummaryCsv() {
+      downloadBlob(new Blob([summaryToCsv(currentEvents())], { type: "text/csv;charset=utf-8" }), "code-edit-summary.csv");
+    }
+
+    function setupEvents() {
+      $("pickFilesBtn").addEventListener("click", () => $("fileInput").click());
+      $("fileInput").addEventListener("change", (event) => requestCourseImport(event.target.files));
+      $("pickFolderBtn").addEventListener("click", () => $("folderInput").click());
+      $("folderInput").addEventListener("change", (event) => {
+        const picked = Array.from(event.target.files || []).filter((file) => isTraceFile(file.name));
+        if (!picked.length) {
+          $("importResult").innerHTML = '<span class="error">所选文件夹里没有找到 edit-trace.log / ai-session-trace.log 文件。</span>';
+          event.target.value = "";
+          return;
+        }
+        requestCourseImport(picked);
+      });
+      $("clearBtn").addEventListener("click", clearData);
+      $("selectAll").addEventListener("change", (event) => setAllStudents(event.target.checked));
+      $("cancelRenameBtn").addEventListener("click", closeRenameDialog);
+      $("confirmRenameBtn").addEventListener("click", confirmRename);
+      $("renameInput").addEventListener("keydown", (event) => {
+        if (event.key === "Enter") confirmRename();
+        if (event.key === "Escape") closeRenameDialog();
+      });
+      $("renameDialog").addEventListener("click", (event) => {
+        if (event.target === $("renameDialog")) closeRenameDialog();
+      });
+      $("cancelEditStudentBtn").addEventListener("click", closeEditStudentDialog);
+      $("confirmEditStudentBtn").addEventListener("click", confirmEditStudent);
+      $("editStudentId").addEventListener("keydown", (event) => {
+        if (event.key === "Enter") confirmEditStudent();
+        if (event.key === "Escape") closeEditStudentDialog();
+      });
+      $("editStudentClass").addEventListener("keydown", (event) => {
+        if (event.key === "Enter") confirmEditStudent();
+        if (event.key === "Escape") closeEditStudentDialog();
+      });
+      $("editStudentCourse").addEventListener("keydown", (event) => {
+        if (event.key === "Enter") confirmEditStudent();
+        if (event.key === "Escape") closeEditStudentDialog();
+      });
+      $("editStudentDialog").addEventListener("click", (event) => {
+        if (event.target === $("editStudentDialog")) closeEditStudentDialog();
+      });
+      $("messageOkBtn").addEventListener("click", closeMessage);
+      $("messageDialog").addEventListener("click", (event) => {
+        if (event.target === $("messageDialog")) closeMessage();
+      });
+      $("courseConfirmBtn").addEventListener("click", () => finishCourseImport(false));
+      $("courseSkipBtn").addEventListener("click", () => finishCourseImport(true));
+      $("courseDialogInput").addEventListener("keydown", (event) => {
+        if (event.key === "Enter") finishCourseImport(false);
+        if (event.key === "Escape") finishCourseImport(true);
+      });
+      $("closeChartBtn").addEventListener("click", closeChartModal);
+      $("popoutChartBtn").addEventListener("click", () => openChartWindow());
+      $("chartDialog").addEventListener("click", (event) => {
+        const zoomButton = event.target.closest("[data-time-zoom]");
+        if (zoomButton) {
+          if (zoomButton.dataset.timeZoom === "in" && state.timeZoomIndex > 0) state.timeZoomIndex -= 1;
+          if (zoomButton.dataset.timeZoom === "out" && state.timeZoomIndex < TIME_ZOOM_MINUTES.length - 1) state.timeZoomIndex += 1;
+          refreshChartModal();
+          return;
+        }
+        const timeBar = event.target.closest(".time-bar[data-time-bin]");
+        if (timeBar) {
+          const bin = state.timeBins.find((item) => String(item.key) === timeBar.dataset.timeBin);
+          const detail = $("chartDialog").querySelector("#timeChartDetail");
+          if (detail) detail.innerHTML = timeBinDetail(bin);
+          return;
+        }
+        if (event.target === $("chartDialog")) closeChartModal();
+      });
+      $("closePreviewBtn").addEventListener("click", closePreview);
+      $("previewDialog").addEventListener("click", (event) => {
+        if (event.target === $("previewDialog")) closePreview();
+      });
+      $("closeAiSessionBtn").addEventListener("click", closeAiSessionDialog);
+      $("aiSessionDialog").addEventListener("click", (event) => {
+        if (event.target === $("aiSessionDialog")) closeAiSessionDialog();
+      });
+      $("closeAiChartBtn").addEventListener("click", closeAiChartModal);
+      $("aiChartDialog").addEventListener("click", (event) => {
+        if (event.target === $("aiChartDialog")) closeAiChartModal();
+      });
+      document.querySelectorAll(".tab").forEach((tab) => tab.addEventListener("click", () => switchTab(tab.dataset.tab)));
+      document.querySelectorAll(".sub-tab").forEach((tab) => {
+        tab.addEventListener("click", () => switchOperationView(tab.dataset.operationTab));
+      });
+      $("courseFilter").addEventListener("change", () => { state.eventPage = 0; updateView(); });
+      $("fileTypeFilter").addEventListener("change", () => { state.eventPage = 0; updateView(); });
+      $("operationFilter").addEventListener("change", () => { state.eventPage = 0; updateView(); });
+      $("dateFromFilter").addEventListener("change", () => { state.eventPage = 0; updateView(); });
+      $("dateToFilter").addEventListener("change", () => { state.eventPage = 0; updateView(); });
+      $("searchInput").addEventListener("input", () => { state.eventPage = 0; updateView(); });
+      $("exportReportBtn").addEventListener("click", openExportDialog);
+      $("exportHtmlBtn").addEventListener("click", () => { closeExportDialog(); exportReport(); });
+      $("exportPdfBtn").addEventListener("click", () => { closeExportDialog(); exportReportPdf(); });
+      $("cancelExportBtn").addEventListener("click", closeExportDialog);
+      $("exportDialog").addEventListener("click", (event) => {
+        if (event.target === $("exportDialog")) closeExportDialog();
+      });
+
+      document.querySelector(".main").addEventListener("click", (event) => {
+        const zoomButton = event.target.closest("[data-time-zoom]");
+        if (zoomButton) {
+          if (zoomButton.dataset.timeZoom === "in" && state.timeZoomIndex > 0) state.timeZoomIndex -= 1;
+          if (zoomButton.dataset.timeZoom === "out" && state.timeZoomIndex < TIME_ZOOM_MINUTES.length - 1) state.timeZoomIndex += 1;
+          updateView();
+          return;
+        }
+        const timeBar = event.target.closest(".time-bar[data-time-bin]");
+        if (timeBar) {
+          const bin = state.timeBins.find((item) => String(item.key) === timeBar.dataset.timeBin);
+          const detail = $("timeChartDetail");
+          if (detail) detail.innerHTML = timeBinDetail(bin);
+          return;
+        }
+        const previewButton = event.target.closest(".preview-btn[data-preview-id]");
+        if (previewButton) {
+          openPreview(previewButton.dataset.previewId);
+          return;
+        }
+        const chartCard = event.target.closest(".chart-card[data-chart]");
+        if (chartCard) openChartModal(chartCard.dataset.chart);
+      });
+
+      const importPanel = $("importPanel");
+      importPanel.addEventListener("dragover", (event) => {
+        event.preventDefault();
+        importPanel.classList.add("dragover");
+      });
+      importPanel.addEventListener("dragleave", () => importPanel.classList.remove("dragover"));
+      importPanel.addEventListener("drop", async (event) => {
+        event.preventDefault();
+        importPanel.classList.remove("dragover");
+        const items = Array.from(event.dataTransfer?.items || []);
+        const entries = items
+          .map((item) => {
+            try { return item.webkitGetAsEntry ? item.webkitGetAsEntry() : null; } catch { return null; }
+          })
+          .filter(Boolean);
+        if (entries.some((entry) => entry.isDirectory)) {
+          $("importResult").textContent = "正在读取拖入的文件夹…";
+          const files = await collectFilesFromEntries(entries);
+          if (!files.length) {
+            $("importResult").innerHTML = '<span class="error">文件夹里没有找到 edit-trace.log / ai-session-trace.log 文件。</span>';
+            return;
+          }
+          requestCourseImport(files);
+          return;
+        }
+        requestCourseImport(event.dataTransfer.files);
+      });
+
+      window.addEventListener("beforeunload", (event) => {
+        if (state.entries.length === 0) return;
+        event.preventDefault();
+        event.returnValue = "当前数据仅保存在本页面中，关闭前请先导出报告或 CSV。";
+      });
+
+      renderAll();
+    }
+
+    loadCourseHistory();
+    setupEvents();
+  </script>
+</body>
+
+</html>
